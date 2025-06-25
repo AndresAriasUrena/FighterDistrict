@@ -8,7 +8,7 @@ export default function Footer() {
         <footer className="bg-black text-white relative overflow-hidden">
             {/* Background SVG - Desktop only */}
             <div 
-                className="absolute inset-0 hidden lg:block bg-cover bg-center bg-no-repeat"
+                className="absolute inset-0 hidden lg:block bg-cover bg-center bg-no-repeat bg-black"
                 style={{
                     backgroundImage: "url('/assets/FondoDesktopFooter.svg')"
                 }}

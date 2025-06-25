@@ -50,7 +50,7 @@ export default function CategorySection1() {
 
   return (
     <section>
-      <div className="container mx-auto px-4 max-w-7xl">
+      <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
         {/* Header */}
         <div className="text-start mb-12">
           <h2 className="text-2xl md:text-3xl font-raven-bold text-black uppercase tracking-wide mb-6">

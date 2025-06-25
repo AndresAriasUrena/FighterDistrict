@@ -25,10 +25,10 @@ export default async function ProductSection() {
     const newProducts = newProductsWoo.map(transformWooCommerceProduct);
 
     return (
-      <div className="mx-auto max-w-7xl px-4">
-        <section className="pb-16">
-          <div className="container mx-auto">
-            <div className="flex justify-between items-center mb-8">
+      <div className="mx-auto max-w-7xl px-4 lg:px-8">
+        <section className="pb-16 w-full">
+          <div className="mx-auto w-full">
+            <div className="flex justify-between items-center mb-8 w-full">
               <h2 className="text-2xl md:text-3xl font-raven-bold text-black uppercase tracking-wide">
                 NUESTROS PRODUCTOS MÁS VENDIDOS
               </h2>
@@ -73,7 +73,7 @@ export default async function ProductSection() {
         </section>
 
         <section className="border-t border-gray-200">
-          <div className="container mx-auto">
+          <div className=" mx-auto">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl md:text-3xl font-raven-bold text-black uppercase tracking-wide">
                 NUEVOS DROPS
@@ -124,7 +124,7 @@ export default async function ProductSection() {
     console.error('Error loading products:', error);
     return (
       <div className="bg-gray-50 py-12">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 lg:px-8">
           <p className="text-center text-gray-500">Error al cargar productos</p>
         </div>
       </div>

@@ -333,7 +333,7 @@ export default async function ProductsPage() {
     const products = wooProducts.map(transformWooCommerceProduct);
 
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 lg:px-8 py-8">
         <h1 className="text-3xl font-raven-bold text-black mb-8">
           Productos
         </h1>

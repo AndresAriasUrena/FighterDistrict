@@ -1,16 +1,47 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 
 export default function HeroSection() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            video.play().catch(console.error);
+          } else {
+            video.pause();
+          }
+        });
+      },
+      {
+        threshold: 0.25,
+      }
+    );
+
+    observer.observe(video);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   return (
-    <section className="relative h-[88.5vh] bg-black flex items-center justify-start overflow-hidden">
+    <section className="relative h-[90vh] bg-black flex items-center justify-start overflow-hidden">
       {/* Background Video */}
       <video
+        ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover grayscale opacity-70 z-1"
-        autoPlay
         muted
         loop
         playsInline
-        preload="auto"
+        preload="metadata"
       >
         <source src="/assets/homepage/hero.webm" type="video/webm" />
         <div className="absolute inset-0 bg-black"></div>
@@ -20,7 +51,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-black/10 z-2" />
       
       {/* Content */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 lg:px-8">
         <div className="mr-auto">
           <h1 className="text-4xl sm:text-5xl lg:text-5xl 2xl:text-7xl font-raven-bold text-white leading-tight mb-6">
             EL MEJOR EQUIPO<br />
