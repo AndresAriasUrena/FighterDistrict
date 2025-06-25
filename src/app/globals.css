@@ -1,5 +1,41 @@
 @import "tailwindcss";
 
+/* Fuentes personalizadas RavenHell */
+@font-face {
+  font-family: 'RavenHell-LightGothic';
+  src: url('/assets/fonts/RavenHell-LightGothic.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'RavenHell-RegularGothic';
+  src: url('/assets/fonts/RavenHell-RegularGothic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'RavenHell-MediumGothic';
+  src: url('/assets/fonts/RavenHell-MediumGothic.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'RavenHell-BoldGothic';
+  src: url('/assets/fonts/RavenHell-BoldGothic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'RavenHell-BlackGothic';
+  src: url('/assets/fonts/RavenHell-BlackGothic.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -22,5 +58,47 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Urbanist', Arial, Helvetica, sans-serif;
+}
+
+/* Configuración de fuentes para headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'RavenHell-BoldGothic', sans-serif;
+  font-weight: 700;
+}
+
+/* Configuración para párrafos (solo si no tienen clase de fuente específica) */
+p:not([class*="font-raven"]):not([class*="font-urbanist"]) {
+  font-family: 'Urbanist', sans-serif;
+}
+
+/* Clases de utilidad para fuentes RavenHell */
+.font-raven-light {
+  font-family: 'RavenHell-LightGothic', sans-serif !important;
+  font-weight: 300;
+}
+
+.font-raven-regular {
+  font-family: 'RavenHell-RegularGothic', sans-serif !important;
+  font-weight: 400;
+}
+
+.font-raven-medium {
+  font-family: 'RavenHell-MediumGothic', sans-serif !important;
+  font-weight: 500;
+}
+
+.font-raven-bold {
+  font-family: 'RavenHell-BoldGothic', sans-serif !important;
+  font-weight: 700;
+}
+
+.font-raven-black {
+  font-family: 'RavenHell-BlackGothic', sans-serif !important;
+  font-weight: 900;
+}
+
+/* Clases de utilidad para fuente Urbanist */
+.font-urbanist {
+  font-family: 'Urbanist', sans-serif !important;
 }

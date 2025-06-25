@@ -1,20 +1,39 @@
 import { api } from "@/lib/woocommerce";
+import { WooCommerceProduct, transformWooCommerceProduct } from "@/types/product";
+import ProductCard, { ProductGrid } from "@/components/ui/ProductCard";
 
 export default async function ProductsPage() {
-  const res = await api.get("products");
-  const products = res.data;
+  try {
+    const res = await api.get("products");
+    const wooProducts: WooCommerceProduct[] = res.data;
+    const products = wooProducts.map(transformWooCommerceProduct);
 
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Productos</h1>
-      <ul className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {products.map((product: any) => (
-          <li key={product.id} className="border p-4 rounded shadow">
-            <p className="font-semibold">{product.name}</p>
-            <p>Precio: ${product.price}</p>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-raven-bold text-black mb-8">Productos</h1>
+        
+        <ProductGrid cols={3} gap="medium">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              category={product.category}
+              price={product.price}
+              image={product.image}
+              href={`/products/${product.slug}`}
+            />
+          ))}
+        </ProductGrid>
+      </div>
+    );
+  } catch (error) {
+    console.error('Error loading products:', error);
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-raven-bold text-black mb-8">Productos</h1>
+        <p className="text-red-500">Error al cargar los productos. Por favor, intenta de nuevo más tarde.</p>
+      </div>
+    );
+  }
 }
