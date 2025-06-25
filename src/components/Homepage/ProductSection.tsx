@@ -25,9 +25,9 @@ export default async function ProductSection() {
     const newProducts = newProductsWoo.map(transformWooCommerceProduct);
 
     return (
-      <div className="mx-auto max-w-7xl">
-        <section className="pb-12">
-          <div className="container mx-auto px-4">
+      <div className="mx-auto max-w-7xl px-4">
+        <section className="pb-16">
+          <div className="container mx-auto">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl md:text-3xl font-raven-bold text-black uppercase tracking-wide">
                 NUESTROS PRODUCTOS MÁS VENDIDOS
@@ -72,8 +72,8 @@ export default async function ProductSection() {
           </div>
         </section>
 
-        <section className="pt-12 border-t border-gray-200">
-          <div className="container mx-auto px-4">
+        <section className="border-t border-gray-200">
+          <div className="container mx-auto">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl md:text-3xl font-raven-bold text-black uppercase tracking-wide">
                 NUEVOS DROPS

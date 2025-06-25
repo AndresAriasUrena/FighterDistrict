@@ -20,15 +20,15 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-black/10 z-2" />
       
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto sm:mx-0 md:mr-auto px-4 lg:px-8">
-        <div className="max-w-3xl">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4">
+        <div className="mr-auto">
           <h1 className="text-4xl sm:text-5xl lg:text-5xl 2xl:text-7xl font-raven-bold text-white leading-tight mb-6">
             EL MEJOR EQUIPO<br />
             DE COMBATE EN<br />
             COSTA RICA
           </h1>
           
-          <p className="text-md md:text-sm 2xl:text-lg text-gray-300 font-urbanist max-w-md 2xl:max-w-xl mb-8 leading-tight tracking-wider">
+          <p className="text-md md:text-sm 2xl:text-lg text-[#E9E9E9]/70 font-urbanist max-w-md 2xl:max-w-xl mb-8 leading-tight tracking-wider">
             Cada producto que ofrecemos está pensado para acompañarte en tu 
             evolución como atleta. En Fighter District creemos en el poder de la 
             disciplina, la constancia y la preparación, desde el primer golpe hasta 
