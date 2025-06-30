@@ -10,7 +10,7 @@ interface CategoryCardProps {
 
 function CategoryCard({ title, description, image, className = "" }: CategoryCardProps) {
   return (
-    <div className={`group relative overflow-hidden rounded-lg h-[280px] md:h-[400px] block w-full ${className}`}>
+    <div id="Conoce-mas" className={`group relative overflow-hidden rounded-lg h-[280px] md:h-[400px] block w-full ${className}`}>
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
@@ -111,7 +111,7 @@ export default function Welcome() {
         {/* Ver todos button */}
         <div className="text-center">
           <Link 
-            href="/products"
+            href="/store"
             className="inline-block bg-[#C0C0C0] hover:bg-black text-black/60 hover:text-white px-16 py-3 font-urbanist font-semibold transition-all duration-300 rounded-sm"
           >
             Ver todos

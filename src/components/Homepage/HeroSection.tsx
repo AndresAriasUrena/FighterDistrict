@@ -68,13 +68,13 @@ export default function HeroSection() {
           
           <div className="flex flex-row gap-4">
             <Link 
-              href="/productos"
-              className="bg-[#F5AB06] rounded-sm hover:bg-[#B8171D] text-black hover:text-white px-8 py-3 font-urbanist font-semibold transition-all duration-300 text-center"
+            href="/store"
+            className="bg-[#F5AB06] rounded-sm hover:bg-[#B8171D] text-black hover:text-white px-8 py-3 font-urbanist font-semibold transition-all duration-300 text-center"
             >
               Ver productos
             </Link>
             <Link 
-              href="/sobre-nosotros"
+              href="/#Conoce-mas"
               className="bg-white/20 rounded-sm text-white hover:bg-white hover:text-black px-8 py-3 font-urbanist font-semibold transition-all duration-300 text-center"
             >
               Conocer más

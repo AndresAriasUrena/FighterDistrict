@@ -80,8 +80,8 @@ export default async function ProductSection() {
               </h2>
               
               <Link 
-                href="/products"
-                className="group flex items-center gap-2 text-black hover:text-gray-700 transition-colors"
+            href="/store"
+            className="group flex items-center gap-2 text-black hover:text-gray-700 transition-colors"
               >
                 <span className="font-urbanist font-medium text-sm md:text-base">
                   Ver todos

@@ -69,8 +69,8 @@ export default function BoxProductsCTA() {
           
           <div className="flex flex-row gap-4">
             <Link 
-              href="/productos"
-              className="bg-transparent border border-white hover:border-[#B8171D] rounded-sm hover:bg-[#B8171D] text-white hover:text-white px-8 py-3 font-urbanist font-semibold transition-all duration-300 text-center"
+            href="/store"
+            className="bg-transparent border border-white hover:border-[#B8171D] rounded-sm hover:bg-[#B8171D] text-white hover:text-white px-8 py-3 font-urbanist font-semibold transition-all duration-300 text-center"
             >
               Ver productos
             </Link>

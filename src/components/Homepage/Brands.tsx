@@ -56,7 +56,7 @@ export default function Brands() {
 
   return (
     <section>
-      <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
+      <div id="brands" className="container mx-auto px-4 lg:px-8 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-2xl md:text-3xl font-raven-bold text-black uppercase tracking-wide mb-6">
@@ -85,7 +85,7 @@ export default function Brands() {
         {/* Ver todos button */}
         <div className="text-center">
           <Link 
-            href="/products"
+            href="/store"
             className="inline-block bg-[#C0C0C0] hover:bg-black text-black/60 hover:text-white px-16 py-3 font-urbanist font-semibold transition-all duration-300 rounded-sm"
           >
             Ver todos

@@ -76,7 +76,7 @@ export default function CategorySection2() {
         {/* Ver todos button */}
         <div className="text-center">
           <Link 
-            href="/products"
+            href="/store"
             className="inline-block bg-[#C0C0C0] hover:bg-black text-black/60 hover:text-white px-16 py-3 font-urbanist font-semibold transition-all duration-300 rounded-sm"
           >
             Ver todos

@@ -7,15 +7,15 @@ export default function Footer() {
     return (
         <footer className="bg-black text-white relative overflow-hidden">
             {/* Background SVG - Desktop only */}
-            <div 
+            <div
                 className="absolute inset-0 hidden lg:block bg-cover bg-center bg-no-repeat bg-black"
                 style={{
                     backgroundImage: "url('/assets/FondoDesktopFooter.svg')"
                 }}
             />
-            
+
             {/* Content */}
-            <div className="mx-auto px-8 pt-12 pb-4 relative z-10">
+            <div className="mx-auto px-8 pt-12 pb-6 relative z-10">
                 <div className="flex flex-col md:flex-row justify-between max-w-7xl mx-auto items-center md:items-start">
                     <div className="md:col-span-1 text-center md:text-left mb-8 md:mb-0">
                         <div className="mb-4 flex justify-center md:justify-start">
@@ -36,32 +36,32 @@ export default function Footer() {
                             </h4>
                             <ul className="space-y-2">
                                 <li>
-                                    <Link href="/equipamiento" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
+                                    <Link href="/store" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
                                         Equipamiento
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/hoodies" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
+                                    <Link href="/store" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
                                         Hoodies
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/crewnecks" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
+                                    <Link href="/store" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
                                         Crewnecks
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/judo" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
+                                    <Link href="/store" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
                                         Judo
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/bjj" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
+                                    <Link href="/store" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
                                         BJJ
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link href="/boxing" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
+                                    <Link href="/store" className="text-[#DFDFDF]/80 hover:text-white font-urbanist transition-colors">
                                         Boxing
                                     </Link>
                                 </li>
@@ -126,6 +126,23 @@ export default function Footer() {
                             </a>
                         </div>
                     </div>
+                </div>
+                <div className="w-full h-6 mt-6 flex justify-center items-center absolute left-0 bottom-0">
+                    <a
+                        href="https://aurigital.com"
+                        target="_blank"
+                        className="flex justify-center items-center mx-auto w-full mt-1"
+                        aria-label="Créditos de diseño y desarrollo por Aurigital"
+                    >
+                        <p className="text-white uppercase text-[10px] text-center p-1 hover:text-[#28C0F5]">
+                            Made by Aurigital
+                        </p>
+                        <img
+                            src="./assets/isotipo.avif"
+                            alt="Aurigital logo"
+                            className="h-[18px] w-[18px] ml-1"
+                        />
+                    </a>
                 </div>
             </div>
         </footer>
