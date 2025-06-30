@@ -90,7 +90,7 @@ export default function ProductCard({
             font-bold 
             text-black/60
           `}>
-            ${price.toFixed(2)}
+            ${(price || 0).toFixed(2)}
           </span>
         </div>
 

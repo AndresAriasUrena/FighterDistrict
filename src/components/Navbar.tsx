@@ -4,11 +4,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { IoIosArrowForward } from "react-icons/io";
 import { useSearch } from '@/lib/SearchContext';
+import { useCart } from '@/lib/CartContext';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { searchTerm, setSearchTerm } = useSearch();
+  const { cart, toggleCart } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [localSearchTerm, setLocalSearchTerm] = useState('');
 
@@ -81,10 +83,18 @@ export default function Navbar() {
           {/* Search and Cart - Desktop & Mobile */}
           <div className="flex items-center space-x-1">
             {/* Cart Button */}
-            <button className="">
-              <svg className="w-8 h-8 text-black lg:text-[#969696] lg:p-1 lg:border lg:border-[#969696] lg:rounded-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button 
+              onClick={toggleCart}
+              className="relative transition-transform duration-200 hover:scale-110 active:scale-95"
+            >
+              <svg className="w-8 h-8 text-black lg:text-[#969696] lg:p-1 lg:border lg:border-[#969696] lg:rounded-sm transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5h11.5" />
               </svg>
+              {cart.totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-[#EC1D25] text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-urbanist font-bold animate-bounce">
+                  {cart.totalItems}
+                </span>
+              )}
             </button>
 
             {/* Search Bar - Desktop only */}

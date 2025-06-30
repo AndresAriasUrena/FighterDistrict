@@ -7,6 +7,7 @@ import { IoStar } from 'react-icons/io5';
 import { BsCart3 } from 'react-icons/bs';
 import Link from 'next/link';
 import ProductCard, { ProductGrid } from '@/components/ui/ProductCard';
+import { useCart } from '@/lib/CartContext';
 
 interface ProductDetailProps {
   slug: string;
@@ -15,6 +16,7 @@ interface ProductDetailProps {
 export default function ProductDetail({ slug }: ProductDetailProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { addToCart, openCart } = useCart();
   const [product, setProduct] = useState<WooCommerceProduct | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -154,6 +156,26 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
   );
   const colors = colorAttribute?.options || [];
 
+  const handleAddToCart = () => {
+    if (!product) return;
+
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: parseFloat(product.price || '0') || 0,
+      image: product.images[0]?.src || '/placeholder-product.jpg',
+      slug: product.slug,
+      selectedSize: selectedSize || undefined,
+      selectedColor: selectedColor || undefined,
+    };
+
+    addToCart(cartItem, quantity);
+    // Pequeña pausa para mostrar el toast antes de abrir el carrito
+    setTimeout(() => {
+      openCart();
+    }, 500);
+  };
+
   return (
     <div className="min-h-screen bg-[#E9E9E9] px-4 sm:px-6 lg:px-8 ">
       <div className="max-w-7xl mx-auto">
@@ -232,15 +254,15 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
               {/* Price */}
               <div className="flex items-center gap-4">
                 <p className="font-urbanist font-semibold text-xl text-black">
-                  ${parseFloat(product.price).toFixed(2)}
+                  ${(parseFloat(product.price || '0') || 0).toFixed(2)}
                 </p>
                 {product.on_sale && product.regular_price && (
                   <>
                     <p className="font-urbanist text-lg text-gray-500 line-through">
-                      ${parseFloat(product.regular_price).toFixed(2)}
+                      ${(parseFloat(product.regular_price || '0') || 0).toFixed(2)}
                     </p>
                     <p className="bg-[#EC1D25] text-white px-2 py-1 rounded-md text-sm font-urbanist font-bold">
-                      -{Math.round(((parseFloat(product.regular_price) - parseFloat(product.price)) / parseFloat(product.regular_price)) * 100)}%
+                      -{Math.round((((parseFloat(product.regular_price || '0') || 0) - (parseFloat(product.price || '0') || 0)) / (parseFloat(product.regular_price || '0') || 1)) * 100)}%
                     </p>
                   </>
                 )}
@@ -313,8 +335,11 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
               </div>
 
               {/* Add to Cart Button */}
-              <button className="w-full bg-black text-white py-4 rounded-md font-raven-medium text-lg hover:bg-[#EC1D25] duration-300 transition-colors flex items-center justify-center gap-2">
-                <BsCart3 className="w-5 h-5" />
+              <button 
+                onClick={handleAddToCart}
+                className="w-full bg-black text-white py-4 rounded-md font-raven-medium text-lg hover:bg-[#EC1D25] duration-300 transition-all flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 hover:shadow-lg"
+              >
+                <BsCart3 className="w-5 h-5 transition-transform duration-200" />
                 Añadir al carrito
               </button>
 
