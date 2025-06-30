@@ -1,17 +1,21 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { IoIosArrowForward } from "react-icons/io";
+import { useSearch } from '@/lib/SearchContext';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { searchTerm, setSearchTerm } = useSearch();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [localSearchTerm, setLocalSearchTerm] = useState('');
 
   const navItems = [
     { href: '/', label: 'Inicio' },
     { href: '/marcas', label: 'Marcas' },
-    { href: '/tienda', label: 'Tienda' },
+    { href: '/store', label: 'Tienda' },
     { href: '/sobre-nosotros', label: 'Sobre Nosotros' },
     { href: '/contacto', label: 'Contacto' },
   ];
@@ -22,6 +26,22 @@ export default function Navbar() {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+
+  const handleSearch = (e: React.FormEvent, searchValue: string) => {
+    e.preventDefault();
+    if (searchValue.trim()) {
+      setSearchTerm(searchValue.trim());
+      if (pathname !== '/store') {
+        router.push('/store');
+      }
+      setLocalSearchTerm('');
+      closeMenu();
+    }
+  };
+
+  const handleSearchInputChange = (value: string) => {
+    setLocalSearchTerm(value);
   };
 
   return (
@@ -69,16 +89,23 @@ export default function Navbar() {
 
             {/* Search Bar - Desktop only */}
             <div className="relative hidden lg:block">
-              <input
-                type="text"
-                placeholder="Buscar..."
-                className="border h-8 border-[#969696] rounded px-3 py-1 text-sm focus:outline-none font-urbanist pr-8 placeholder:text-[#6E6E6E] placeholder:font-semibold text-black"
-              />
-              <button className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                <svg className="w-4 h-4 text-[#969696]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
+              <form onSubmit={(e) => handleSearch(e, localSearchTerm)}>
+                <input
+                  type="text"
+                  placeholder="Buscar productos..."
+                  value={localSearchTerm}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  className="border h-8 border-[#969696] rounded px-3 py-1 text-sm focus:outline-none font-urbanist pr-8 placeholder:text-[#6E6E6E] placeholder:font-semibold text-black"
+                />
+                <button 
+                  type="submit"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 hover:text-black transition-colors"
+                >
+                  <svg className="w-4 h-4 text-[#969696]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </form>
             </div>
 
             {/* Mobile menu button */}
@@ -135,16 +162,23 @@ export default function Navbar() {
           {/* Search Bar - Mobile */}
           <div className="p-6 border-b border-gray-200">
             <div className="relative">
-              <input
-                type="text"
-                placeholder="Buscar..."
-                className="w-full border border-[#969696] rounded px-3 py-2 text-sm focus:outline-none font-urbanist pr-8 placeholder:text-[#6E6E6E] placeholder:font-semibold text-black"
-              />
-              <button className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                <svg className="w-4 h-4 text-[#969696]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
+              <form onSubmit={(e) => handleSearch(e, localSearchTerm)}>
+                <input
+                  type="text"
+                  placeholder="Buscar productos..."
+                  value={localSearchTerm}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  className="w-full border border-[#969696] rounded px-3 py-2 text-sm focus:outline-none font-urbanist pr-8 placeholder:text-[#6E6E6E] placeholder:font-semibold text-black"
+                />
+                <button 
+                  type="submit"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 hover:text-black transition-colors"
+                >
+                  <svg className="w-4 h-4 text-[#969696]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </form>
             </div>
           </div>
 

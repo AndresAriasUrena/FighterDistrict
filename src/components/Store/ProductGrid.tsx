@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { IoChevronDown } from 'react-icons/io5';
-import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
+import { IoChevronDown, IoChevronBack, IoChevronForward, IoClose, IoSearch, IoSadOutline } from 'react-icons/io5';
 import ProductCard from '@/components/ui/ProductCard';
 import { WooCommerceProduct } from '@/types/product';
+import { useSearch } from '@/lib/SearchContext';
 
 interface ProductGridProps {
     filters?: any;
+    onOpenFilters?: () => void;
 }
 
 interface SortOption {
@@ -27,7 +28,8 @@ const sortOptions: SortOption[] = [
 
 const PRODUCTS_PER_PAGE = 12;
 
-const ProductGrid = ({ filters }: ProductGridProps) => {
+const ProductGrid = ({ filters, onOpenFilters }: ProductGridProps) => {
+    const { searchTerm, clearSearch } = useSearch();
     const [products, setProducts] = useState<WooCommerceProduct[]>([]);
     const [filteredProducts, setFilteredProducts] = useState<WooCommerceProduct[]>([]);
     const [loading, setLoading] = useState(true);
@@ -68,12 +70,43 @@ const ProductGrid = ({ filters }: ProductGridProps) => {
 
     // Aplicar filtros
     useEffect(() => {
-        if (!filters) {
-            setFilteredProducts(products);
-            return;
+        let filtered = products;
+
+        // Aplicar búsqueda por término si existe
+        if (searchTerm && searchTerm.trim()) {
+            const searchLower = searchTerm.toLowerCase();
+            filtered = filtered.filter(product => {
+                // Buscar en nombre (siempre presente)
+                if (product.name?.toLowerCase().includes(searchLower)) return true;
+                
+                // Buscar en descripción corta
+                if (product.short_description?.toLowerCase().includes(searchLower)) return true;
+                
+                // Buscar en descripción completa
+                if (product.description?.toLowerCase().includes(searchLower)) return true;
+                
+                // Buscar en categorías
+                if (product.categories?.some(cat => 
+                    cat.name?.toLowerCase().includes(searchLower)
+                )) return true;
+                
+                // Buscar en tags
+                if (product.tags?.some(tag => 
+                    tag.name?.toLowerCase().includes(searchLower)
+                )) return true;
+                
+                // Buscar en marcas
+                if (product.brands?.some(brand => 
+                    brand.name?.toLowerCase().includes(searchLower)
+                )) return true;
+                
+                return false;
+            });
         }
 
-        let filtered = products.filter(product => {
+        // Aplicar filtros adicionales si existen
+        if (filters) {
+            filtered = filtered.filter(product => {
             // Filtrar por categorías
             if (filters.categories?.length > 0) {
                 const hasCategory = product.categories?.some(cat =>
@@ -116,12 +149,13 @@ const ProductGrid = ({ filters }: ProductGridProps) => {
                 }
             }
 
-            return true;
-        });
+                return true;
+            });
+        }
 
         setFilteredProducts(filtered);
         setCurrentPage(1); // Reset página al filtrar
-    }, [filters, products]);
+    }, [filters, products, searchTerm]);
 
     // Aplicar ordenamiento
     const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -239,43 +273,75 @@ const ProductGrid = ({ filters }: ProductGridProps) => {
     return (
         <div className="flex-1 p-4 lg:p-6">
             {/* Header con contador, ordenamiento y paginación */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-3">
                 <div className="flex flex-row gap-2 items-center">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setSortDropdownOpen(!sortDropdownOpen);
-                        }}
-                        className="flex items-center gap-5 px-4 py-2 rounded-md bg-[#EC1D25] text-black"
-                    >
-                        <span className="text-sm font-medium">
-                            {sortOptions.find(option => option.value === sortBy)?.label}
-                        </span>
-                        <IoChevronDown className={`w-4 h-4 transition-transform ${sortDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {/* Dropdown de ordenamiento */}
+                    {/* Dropdown de ordenamiento mejorado */}
                     <div className="relative">
-                        {sortDropdownOpen && (
-                            <div className="absolute -right-17 top-5 mt-1 w-56 bg-black text-white border border-gray-200 rounded-md shadow-lg z-10">
-                                {sortOptions.map((option) => (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSortDropdownOpen(!sortDropdownOpen);
+                            }}
+                            className="group flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-[#EC1D25] to-[#B8171D] text-white rounded-lg transition-all duration-300 ease-in-out transform hover:scale-[1.02] min-w-[200px]"
+                        >
+                            <span className="text-sm font-semibold text-white flex-1 text-left">
+                                {sortOptions.find(option => option.value === sortBy)?.label}
+                            </span>
+                            <IoChevronDown className={`w-4 h-4 transition-all duration-300 ease-in-out text-white/90 group-hover:text-white ${sortDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
+                        </button>
+
+                        {/* Dropdown con animación mejorada */}
+                        <div className={`absolute left-0 top-full mt-2 w-full min-w-[280px] bg-white border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden transition-all duration-300 ease-out ${
+                            sortDropdownOpen 
+                                ? 'opacity-100 transform translate-y-0 scale-100' 
+                                : 'opacity-0 transform -translate-y-2 scale-95 pointer-events-none'
+                        }`}>
+                            <div className="py-2">
+                                {sortOptions.map((option, index) => (
                                     <button
                                         key={option.value}
                                         onClick={() => {
                                             setSortBy(option.value);
                                             setSortDropdownOpen(false);
                                         }}
-                                        className={`w-full text-left px-4 py-2 text-sm text-white ${sortBy === option.value ? 'bg-[#EC1D25] font-medium' : ''
-                                            }`}
+                                        className={`w-full text-left px-4 py-3 text-sm transition-all duration-200 ease-in-out relative ${
+                                            sortBy === option.value 
+                                                ? 'bg-gradient-to-r from-[#EC1D25]/10 to-[#B8171D]/5 text-[#EC1D25] font-semibold border-r-4 border-[#EC1D25]' 
+                                                : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900'
+                                        }`}
                                     >
-                                        {option.label}
+                                        <div className="flex items-center justify-between">
+                                            <span>{option.label}</span>
+                                            {sortBy === option.value && (
+                                                <div className="w-2 h-2 bg-[#EC1D25] rounded-full animate-pulse"></div>
+                                            )}
+                                        </div>
+                                        {index < sortOptions.length - 1 && (
+                                            <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
+                                        )}
                                     </button>
                                 ))}
                             </div>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <p className="text-gray-600 text-sm hidden lg:block">
+                            Mostrando {startIndex + 1}-{Math.min(endIndex, totalProducts)} de {totalProducts} productos
+                        </p>
+                        {searchTerm && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <span className="text-gray-600">Buscando:</span>
+                                <span className="font-semibold text-[#EC1D25]">"{searchTerm}"</span>
+                                <button
+                                    onClick={clearSearch}
+                                    className="text-gray-400 hover:text-gray-600 underline text-xs"
+                                >
+                                    Limpiar búsqueda
+                                </button>
+
+                            </div>
                         )}
                     </div>
-                    <p className="text-gray-600 text-sm hidden lg:block">
-                        Mostrando {startIndex + 1}-{Math.min(endIndex, totalProducts)} de {totalProducts} productos
-                    </p>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -287,8 +353,26 @@ const ProductGrid = ({ filters }: ProductGridProps) => {
             {/* Grid de productos */}
             {currentProducts.length === 0 ? (
                 <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg mb-2">No se encontraron productos</p>
-                    <p className="text-gray-400">Intenta ajustar los filtros</p>
+                    <p className="text-gray-500 text-lg mb-2">
+                        {searchTerm 
+                            ? `No se encontraron productos para "${searchTerm}"` 
+                            : 'No se encontraron productos'
+                        }
+                    </p>
+                    <p className="text-gray-400">
+                        {searchTerm 
+                            ? 'Intenta con un término de búsqueda diferente o ajusta los filtros'
+                            : 'Intenta ajustar los filtros'
+                        }
+                    </p>
+                    {searchTerm && (
+                                   <button
+                                   onClick={clearSearch}                             
+                                   className="bg-[#F5AB06] mt-4 rounded-sm hover:bg-[#B8171D] text-black hover:text-white px-8 py-3 font-urbanist font-semibold transition-all duration-300 text-center"
+                               >
+                                   Limpiar búsqueda
+                               </button>
+                    )}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-8 border-t border-[#2F2F2F] pt-6">
