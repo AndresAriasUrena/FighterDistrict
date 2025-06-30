@@ -441,8 +441,178 @@ Property 'nombre' does not exist on type 'WooCommerceProduct'
 5. **Comparación**: Funcionalidad para comparar productos
 6. **Reviews**: Sistema de reseñas y calificaciones
 
+## 🔄 Actualizaciones Recientes (Enero 2025)
+
+### ✅ Sistema de Filtros Mejorado
+
+#### Corrección de Marcas
+- **Problema resuelto**: Las marcas ahora se extraen del campo correcto `brands` de WooCommerce
+- **Antes**: Se mezclaban marcas con tags deportivos
+- **Ahora**: Separación clara entre marcas (`brands`) y deportes (`tags`)
+
+```typescript
+// FilterSidebar.tsx - Extracción corregida
+product.brands?.forEach(brand => {
+  brandMap.set(brand.name, (brandMap.get(brand.name) || 0) + 1);
+});
+
+// Tags solo para deportes
+product.tags?.forEach(tag => {
+  const sportKeywords = ['bjj', 'judo', 'grappling', 'boxing', 'mma'];
+  const isSport = sportKeywords.some(sport => tagLower.includes(sport));
+  if (isSport) {
+    sportMap.set(tagName, (sportMap.get(tagName) || 0) + 1);
+  }
+});
+```
+
+#### Sincronización con URL
+- **URLs compartibles**: Los filtros se reflejan en la URL
+- **Persistencia**: Al volver de un producto, los filtros se mantienen
+- **Ejemplo**: `/store?categories=Rashguards&brands=Engage&sizes=M,L&minPrice=50&maxPrice=150`
+
+```typescript
+// Actualización automática de URL
+const updateURL = (filters: FilterData) => {
+  const params = new URLSearchParams();
+  if (filters.categories.length > 0) params.set('categories', filters.categories.join(','));
+  if (filters.brands.length > 0) params.set('brands', filters.brands.join(','));
+  // ... más parámetros
+  router.replace(params.toString() ? `?${params.toString()}` : '/store');
+};
+```
+
+#### Checkboxes Personalizados
+- **Diseño mejorado**: Checkboxes rojos personalizados
+- **Eliminado**: Diseño default del navegador
+- **Hover effects**: Transiciones suaves
+
+```css
+/* Checkbox personalizado */
+.checkbox-custom {
+  @apply w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center;
+  @apply border-[#8B8B8B] hover:border-[#EC1D25];
+}
+
+.checkbox-custom.checked {
+  @apply bg-[#EC1D25] border-[#EC1D25];
+}
+```
+
+### ✅ ProductDetail Mejorado
+
+#### Descripción Completa
+- **Cambio**: Ahora muestra la descripción **extendida** (`description`)
+- **Antes**: Solo descripción corta (`short_description`)
+- **Beneficio**: Información completa del producto
+
+#### Selector de Cantidad Rediseñado
+- **Diseño elegante**: Botones con bordes y hover effects
+- **Posición**: Movido antes del botón "Añadir al carrito"
+- **Símbolos mejorados**: Usa "−" y "+" más elegantes
+
+```tsx
+<div className="flex items-center bg-white border-2 border-[#CFCFCF] rounded-md overflow-hidden">
+  <button className="px-4 py-3 font-urbanist font-bold text-lg hover:bg-gray-50 transition-colors">
+    −
+  </button>
+  <div className="px-6 py-3 font-urbanist font-semibold text-lg bg-gray-50 border-x border-[#CFCFCF]">
+    {quantity}
+  </div>
+  <button className="px-4 py-3 font-urbanist font-bold text-lg hover:bg-gray-50 transition-colors">
+    +
+  </button>
+</div>
+```
+
+#### Selector de Colores/Variantes
+- **Nuevo**: Input para seleccionar colores del producto
+- **Extracción automática**: De atributos de WooCommerce
+- **Estilo consistente**: Mismo diseño que selector de tallas
+
+#### URLs Dinámicas en Productos
+- **Funcionalidad**: La URL cambia según selecciones del usuario
+- **Parámetros**: `?size=M&color=Negro&quantity=2`
+- **Compartible**: Los enlaces mantienen las selecciones
+- **Persistencia**: Al recargar, mantiene las selecciones
+
+```typescript
+// Actualización automática de URL en ProductDetail
+useEffect(() => {
+  const params = new URLSearchParams();
+  if (selectedSize) params.set('size', selectedSize);
+  if (selectedColor) params.set('color', selectedColor);
+  if (quantity > 1) params.set('quantity', quantity.toString());
+  
+  const newURL = params.toString() 
+    ? `/products/${slug}?${params.toString()}`
+    : `/products/${slug}`;
+  
+  router.replace(newURL, { scroll: false });
+}, [selectedSize, selectedColor, quantity]);
+```
+
+### ✅ Tipos TypeScript Actualizados
+
+#### Nuevo Tipo: WooCommerceBrand
+```typescript
+export interface WooCommerceBrand {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface WooCommerceProduct {
+  // ... campos existentes
+  brands: WooCommerceBrand[];  // ← Nuevo campo agregado
+}
+```
+
+### ✅ Limpieza de Código
+
+#### Eliminado Debug Code
+- **Removido**: Todos los `console.log` de debug
+- **Limpio**: Código listo para producción
+- **Performance**: Sin logs innecesarios en consola
+
+#### Archivos Eliminados
+- `/api/debug-products/route.ts`
+- `/api/product-attributes/route.ts`
+- Comentarios de debug temporal
+
+### 🎯 Estado Actual del Sistema
+
+#### ✅ Completado
+- [x] Sistema de filtros con marcas corregidas
+- [x] URLs compartibles en filtros y productos
+- [x] Checkboxes personalizados rojos
+- [x] Selector de cantidad mejorado
+- [x] Selector de colores/variantes
+- [x] Descripción extendida en productos
+- [x] URLs dinámicas en ProductDetail
+- [x] Código limpio sin debug
+- [x] Tipos TypeScript actualizados
+
+#### 🚧 Próximas Mejoras
+- [ ] Carrito de compras funcional
+- [ ] Proceso de checkout
+- [ ] Sistema de favoritos
+- [ ] Búsqueda avanzada con filtros
+
+### 📊 Métricas de Mejora
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| **Marcas** | Mezcladas con tags | Campo `brands` correcto |
+| **URLs** | Estáticas | Dinámicas y compartibles |
+| **Checkboxes** | Default del navegador | Personalizados rojos |
+| **Cantidad** | Diseño básico | Elegante con hover |
+| **Descripción** | Corta | Completa y detallada |
+| **Variantes** | Solo tallas | Tallas + colores |
+| **Debug** | Logs en consola | Código limpio |
+
 ---
 
-**Mantenido por**: Equipo de Desarrollo Fighter District  
 **Última actualización**: Enero 2025  
-**Versión**: 1.0.0 
+**Versión**: 1.1.0  
+**Estado**: ✅ Listo para producción 

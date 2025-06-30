@@ -19,6 +19,12 @@ export interface WooCommerceTag {
   slug: string;
 }
 
+export interface WooCommerceBrand {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export interface WooCommerceAttribute {
   id: number;
   name: string;
@@ -67,6 +73,7 @@ export interface WooCommerceProduct {
   purchase_note: string;
   categories: WooCommerceCategory[];
   tags: WooCommerceTag[];
+  brands: WooCommerceBrand[];
   images: WooCommerceImage[];
   attributes: WooCommerceAttribute[];
   menu_order: number;
