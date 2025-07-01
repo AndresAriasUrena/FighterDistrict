@@ -167,6 +167,22 @@ p:not([class*="font-raven"]):not([class*="font-urbanist"]) {
   animation: slideOutRight 0.3s ease-in forwards;
 }
 
+/* Animación desde la izquierda */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out forwards;
+}
+
 /* Animación de barra de progreso para el toast */
 @keyframes progress {
   from {

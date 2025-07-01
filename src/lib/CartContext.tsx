@@ -43,6 +43,63 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('fighterDistrict_cart', JSON.stringify(cart));
   }, [cart]);
 
+  // Sincronización entre pestañas/ventanas
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      // Solo procesar cambios del carrito desde otras ventanas
+      if (e.key === 'fighterDistrict_cart' && e.newValue && e.storageArea === localStorage) {
+        try {
+          const newCart = JSON.parse(e.newValue);
+          // Actualizar el carrito con los datos de la otra ventana
+          setCart({
+            items: newCart.items || [],
+            totalItems: newCart.totalItems || 0,
+            totalPrice: newCart.totalPrice || 0
+          });
+        } catch (error) {
+          console.error('Error syncing cart from other window:', error);
+        }
+      }
+    };
+
+    // Escuchar cambios en localStorage desde otras ventanas
+    window.addEventListener('storage', handleStorageChange);
+
+         return () => {
+       window.removeEventListener('storage', handleStorageChange);
+     };
+   }, []);
+
+  // Verificación adicional cuando la ventana vuelve a estar activa
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // La ventana volvió a estar activa, verificar si hay cambios en localStorage
+        const savedCart = localStorage.getItem('fighterDistrict_cart');
+        if (savedCart) {
+          try {
+            const storedCart = JSON.parse(savedCart);
+            // Solo actualizar si los datos son diferentes
+            if (JSON.stringify(cart) !== savedCart) {
+              setCart({
+                items: storedCart.items || [],
+                totalItems: storedCart.totalItems || 0,
+                totalPrice: storedCart.totalPrice || 0
+              });
+            }
+          } catch (error) {
+            console.error('Error checking cart on visibility change:', error);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [cart]);
+
   // Recalcular totales cuando cambien los items
   useEffect(() => {
     const totalItems = cart.items.reduce((sum, item) => sum + (item.quantity || 0), 0);

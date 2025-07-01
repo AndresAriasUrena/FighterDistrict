@@ -4,6 +4,7 @@ import "./globals.css";
 import { SearchProvider } from "@/lib/SearchContext";
 import { CartProvider } from "@/lib/CartContext";
 import CartSidebar from "@/components/CartSidebar";
+import CartSyncIndicator from "@/components/CartSyncIndicator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -127,6 +128,7 @@ export default function RootLayout({
           <CartProvider>
             {children}
             <CartSidebar />
+            <CartSyncIndicator />
           </CartProvider>
         </SearchProvider>
       </body>
