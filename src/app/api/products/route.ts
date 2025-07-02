@@ -56,7 +56,7 @@ function validateQueryParams(searchParams: URLSearchParams) {
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting
-    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     if (isRateLimited(ip)) {
       return NextResponse.json(
         { error: 'Too many requests', retryAfter: WINDOW_MS / 1000 },
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       endpoint: '/api/products',
       method: 'GET',
       error: error instanceof Error ? error.message : 'Unknown error',
-      ip: request.ip || 'unknown',
+      ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown'
     };
     

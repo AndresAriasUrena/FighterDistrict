@@ -222,9 +222,13 @@ export default function CartSidebar() {
 
               {/* Checkout Buttons con animaciones */}
               <div className="space-y-3">
-                <button className="w-full bg-black text-white py-3 rounded-md font-raven-medium text-lg hover:bg-[#EC1D25] transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg">
+                <Link
+                  href="/checkout"
+                  onClick={closeCart}
+                  className="block w-full text-center bg-black text-white py-3 rounded-md font-raven-medium text-lg hover:bg-[#EC1D25] transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg"
+                >
                   Proceder al pago
-                </button>
+                </Link>
                 <Link
                   href="/store"
                   onClick={closeCart}
