@@ -31,7 +31,9 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; font-src 'self' data:; connect-src 'self' https:;",
+            value: process.env.NODE_ENV === 'development' 
+              ? "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' data: https:; img-src 'self' https: data: blob:; connect-src 'self' https:; frame-src 'self' https:;"
+              : "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://sdk.onvopay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https: https://api.onvopay.com; frame-src 'self' https://sdk.onvopay.com https://checkout.onvopay.com;",
           },
         ],
       },

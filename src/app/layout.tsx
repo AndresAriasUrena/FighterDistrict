@@ -120,6 +120,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#EC1D25" />
         <meta name="msapplication-TileColor" content="#EC1D25" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        
+        {/* ONVO Pay SDK */}
+        <script src="https://sdk.onvopay.com/sdk.js" defer></script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-urbanist`}
