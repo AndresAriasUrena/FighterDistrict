@@ -1,0 +1,18 @@
+{
+  "name": "Fighter District",
+  "short_name": "FighterDistrict", 
+  "description": "Tu tienda de equipamiento de combate",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "theme_color": "#EC1D25",
+  "background_color": "#E9E9E9",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "scope": "/"
+} 

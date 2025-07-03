@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { api } from '@/lib/woocommerce';
+import { useCart } from '@/lib/CartContext';
 
 interface OrderInfo {
   orderId: number;
@@ -33,64 +33,79 @@ interface OrderDetails {
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { clearCart } = useCart();
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [verificationDone, setVerificationDone] = useState(false);
+
+  const verifyPayment = useCallback(async () => {
+    // Si ya verificamos, no hacer nada
+    if (verificationDone) return;
+
+    try {
+      // Obtener order_id y payment_intent_id de la URL
+      const orderIdFromUrl = searchParams.get('order_id');
+      const paymentIntentIdFromUrl = searchParams.get('payment_intent_id');
+      
+      // Intentar obtener la información desde localStorage como backup
+      const storedOrder = localStorage.getItem('current_order');
+      let orderInfo: OrderInfo | null = null;
+      
+      if (storedOrder) {
+        try {
+          orderInfo = JSON.parse(storedOrder);
+        } catch (e) {
+          console.error('Error parsing stored order:', e);
+        }
+      }
+
+      // Usar order_id de URL o localStorage
+      const orderId = orderIdFromUrl || orderInfo?.orderId;
+
+      if (!orderId) {
+        setError('No se encontró información de la orden');
+        setLoading(false);
+        setVerificationDone(true);
+        return;
+      }
+
+      console.log('Verificando orden:', orderId);
+      console.log('Payment Intent ID:', paymentIntentIdFromUrl);
+
+      // Verificar el estado de la orden a través de nuestra API
+      const response = await fetch(`/api/verify-order?orderId=${orderId}`);
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Error al verificar la orden');
+      }
+
+      const order = result.order;
+      console.log('Estado de la orden:', order.status);
+      
+      setOrderDetails(order);
+
+      // Limpiar información de localStorage y carrito si todo está bien
+      if (order.status === 'processing' || order.status === 'completed') {
+        localStorage.removeItem('current_order');
+        localStorage.removeItem('pending_order_info');
+        localStorage.removeItem('fighterDistrict_cart');
+        clearCart(); // Limpiar el carrito usando el contexto
+      }
+
+      setVerificationDone(true);
+    } catch (err: any) {
+      console.error('Error verifying payment:', err);
+      setError('Error al verificar el estado del pago');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchParams, clearCart, verificationDone]);
 
   useEffect(() => {
-    const verifyPayment = async () => {
-      try {
-        // Obtener order_id y payment_intent_id de la URL
-        const orderIdFromUrl = searchParams.get('order_id');
-        const paymentIntentIdFromUrl = searchParams.get('payment_intent_id');
-        
-        // Intentar obtener la información desde localStorage como backup
-        const storedOrder = localStorage.getItem('current_order');
-        let orderInfo: OrderInfo | null = null;
-        
-        if (storedOrder) {
-          try {
-            orderInfo = JSON.parse(storedOrder);
-          } catch (e) {
-            console.error('Error parsing stored order:', e);
-          }
-        }
-
-        // Usar order_id de URL o localStorage
-        const orderId = orderIdFromUrl || orderInfo?.orderId;
-
-        if (!orderId) {
-          setError('No se encontró información de la orden');
-          setLoading(false);
-          return;
-        }
-
-        console.log('Verificando orden:', orderId);
-        console.log('Payment Intent ID:', paymentIntentIdFromUrl);
-
-        // Verificar el estado de la orden en WooCommerce
-        const response = await api.get(`orders/${orderId}`);
-        const order = response.data;
-
-        console.log('Estado de la orden:', order.status);
-        
-        setOrderDetails(order);
-
-        // Limpiar información de localStorage si todo está bien
-        if (order.status === 'processing' || order.status === 'completed') {
-          localStorage.removeItem('current_order');
-        }
-
-      } catch (err: any) {
-        console.error('Error verifying payment:', err);
-        setError('Error al verificar el estado del pago');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     verifyPayment();
-  }, [searchParams]);
+  }, [verifyPayment]);
 
   const formatCurrency = (amount: string | number) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -147,7 +162,7 @@ export default function CheckoutSuccessPage() {
   const isPaymentSuccessful = orderDetails?.status === 'processing' || orderDetails?.status === 'completed';
 
   return (
-    <div className="min-h-screen bg-[#E9E9E9]">
+    <div className="min-h-screen bg-[#E9E9E9] text-black">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">

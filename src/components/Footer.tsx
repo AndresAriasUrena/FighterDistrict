@@ -138,7 +138,7 @@ export default function Footer() {
                             Made by Aurigital
                         </p>
                         <img
-                            src="./assets/isotipo.avif"
+                            src="/assets/isotipo.avif"
                             alt="Aurigital logo"
                             className="h-[18px] w-[18px] ml-1"
                         />

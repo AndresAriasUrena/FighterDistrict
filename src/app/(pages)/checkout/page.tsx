@@ -109,27 +109,7 @@ export default function CheckoutPage() {
     try {
       console.log('Iniciando proceso de checkout...');
       
-      // 1. Crear la orden en WooCommerce
-      const orderResponse = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          cart: cart.items,
-          customerInfo: customerInfo
-        }),
-      });
-
-      const orderData = await orderResponse.json();
-      
-      if (!orderResponse.ok) {
-        throw new Error(orderData.error || 'Error al crear la orden');
-      }
-
-      console.log('Orden creada:', orderData.order);
-
-      // 2. Crear payment intent en ONVO (flujo SDK)
+      // 1. Crear payment intent en ONVO primero
       console.log('Creando payment intent en ONVO...');
       
       const paymentResponse = await fetch('/api/create-payment', {
@@ -138,8 +118,7 @@ export default function CheckoutPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          orderId: orderData.order.id,
-          total: orderData.order.total,
+          total: cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
           currency: 'USD',
           customerInfo: {
             ...customerInfo,
@@ -161,14 +140,14 @@ export default function CheckoutPage() {
 
       console.log('Payment intent creado exitosamente:', paymentData.payment);
 
-      // 3. Guardar info de la orden para el SDK
-      localStorage.setItem('current_order', JSON.stringify({
-        orderId: orderData.order.id,
-        paymentIntentId: paymentData.payment.id,
-        total: orderData.order.total
+      // 2. Guardar info temporal para crear la orden después
+      localStorage.setItem('pending_order_info', JSON.stringify({
+        customerInfo,
+        cartItems: cart.items,
+        paymentIntentId: paymentData.payment.id
       }));
 
-      // 4. Mostrar el componente de pago de ONVO
+      // 3. Mostrar el componente de pago de ONVO
       setIsLoading(false);
       setShowPaymentForm(true);
       setPaymentIntentId(paymentData.payment.id);
@@ -176,7 +155,6 @@ export default function CheckoutPage() {
     } catch (err: any) {
       console.error('Error en checkout:', err);
       setError(err.message || 'Error al procesar el pago');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -188,19 +166,50 @@ export default function CheckoutPage() {
     }).format(amount);
   };
 
-  // Callbacks para el SDK de ONVO
-  const handlePaymentSuccess = (data: any) => {
+  // Modificar el callback de éxito
+  const handlePaymentSuccess = async (data: any) => {
     console.log('✅ Pago exitoso:', data);
     
-    // Limpiar el carrito
-    clearCart();
-    
-    // Obtener información guardada
-    const orderInfo = localStorage.getItem('current_order');
-    const order = orderInfo ? JSON.parse(orderInfo) : null;
-    
-    // Redirigir a página de éxito
-    window.location.href = `/checkout/success?order_id=${order?.orderId || ''}&payment_intent_id=${paymentIntentId}`;
+    try {
+      // Recuperar la información guardada
+      const pendingOrderInfo = localStorage.getItem('pending_order_info');
+      if (!pendingOrderInfo) {
+        throw new Error('No se encontró la información de la orden');
+      }
+
+      const orderInfo = JSON.parse(pendingOrderInfo);
+
+      // Crear la orden en WooCommerce con estado "processing"
+      const orderResponse = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cart: orderInfo.cartItems,
+          customerInfo: orderInfo.customerInfo,
+          paymentIntentId: orderInfo.paymentIntentId,
+          paymentStatus: 'completed'
+        }),
+      });
+
+      const orderData = await orderResponse.json();
+      
+      if (!orderResponse.ok) {
+        throw new Error(orderData.error || 'Error al crear la orden');
+      }
+
+      // Limpiar datos temporales y carrito
+      localStorage.removeItem('pending_order_info');
+      localStorage.removeItem('fighterDistrict_cart');
+      clearCart();
+      
+      // Redirigir a página de éxito
+      window.location.href = `/checkout/success?order_id=${orderData.order.id}&payment_intent_id=${orderInfo.paymentIntentId}`;
+    } catch (error) {
+      console.error('Error al finalizar la orden:', error);
+      setError('Error al finalizar la orden. Por favor, contacta a soporte.');
+    }
   };
 
   const handlePaymentError = (data: any) => {
@@ -263,7 +272,7 @@ export default function CheckoutPage() {
         <h1 className="text-4xl font-raven-bold text-center mb-8">Checkout</h1>
         
         {!showPaymentForm ? (
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid lg:grid-cols-2 gap-8 text-black">
             {/* Formulario de información del cliente */}
             <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-2xl font-raven-bold mb-6">Información de Facturación</h2>

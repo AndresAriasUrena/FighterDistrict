@@ -18,12 +18,14 @@ export interface CreateOrderRequest {
       country?: string;
     };
   };
+  paymentIntentId: string;
+  paymentStatus: 'completed' | 'failed';
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: CreateOrderRequest = await request.json();
-    const { cart, customerInfo } = body;
+    const { cart, customerInfo, paymentIntentId, paymentStatus } = body;
 
     // Validar que haya items en el carrito
     if (!cart || cart.length === 0) {
@@ -37,6 +39,14 @@ export async function POST(request: NextRequest) {
     if (!customerInfo.firstName || !customerInfo.lastName || !customerInfo.email) {
       return NextResponse.json(
         { error: 'Información del cliente incompleta' },
+        { status: 400 }
+      );
+    }
+
+    // Validar payment intent
+    if (!paymentIntentId) {
+      return NextResponse.json(
+        { error: 'Payment Intent ID es requerido' },
         { status: 400 }
       );
     }
@@ -58,8 +68,8 @@ export async function POST(request: NextRequest) {
     const orderData = {
       payment_method: 'onvo',
       payment_method_title: 'ONVO Pay',
-      set_paid: false,
-      status: 'pending',
+      set_paid: paymentStatus === 'completed',
+      status: paymentStatus === 'completed' ? 'processing' : 'pending',
       billing: {
         first_name: customerInfo.firstName,
         last_name: customerInfo.lastName,
@@ -91,6 +101,10 @@ export async function POST(request: NextRequest) {
         {
           key: 'payment_gateway',
           value: 'onvo'
+        },
+        {
+          key: 'onvo_payment_intent_id',
+          value: paymentIntentId
         }
       ]
     };
