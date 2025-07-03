@@ -106,12 +106,7 @@ export default function CheckoutPage() {
     setIsLoading(true);
     setError(null);
 
-    try {
-      console.log('Iniciando proceso de checkout...');
-      
-      // 1. Crear payment intent en ONVO primero
-      console.log('Creando payment intent en ONVO...');
-      
+    try {      
       const paymentResponse = await fetch('/api/create-payment', {
         method: 'POST',
         headers: {
@@ -119,7 +114,7 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           total: cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-          currency: 'USD',
+          currency: 'CRC',
           customerInfo: {
             ...customerInfo,
             phone: customerInfo.phone || ''
@@ -138,7 +133,6 @@ export default function CheckoutPage() {
         throw new Error(paymentData.error || 'Error al crear el pago en ONVO');
       }
 
-      console.log('Payment intent creado exitosamente:', paymentData.payment);
 
       // 2. Guardar info temporal para crear la orden después
       localStorage.setItem('pending_order_info', JSON.stringify({
@@ -168,7 +162,6 @@ export default function CheckoutPage() {
 
   // Modificar el callback de éxito
   const handlePaymentSuccess = async (data: any) => {
-    console.log('✅ Pago exitoso:', data);
     
     try {
       // Recuperar la información guardada
@@ -213,7 +206,6 @@ export default function CheckoutPage() {
   };
 
   const handlePaymentError = (data: any) => {
-    console.log('❌ Error en pago:', data);
     setError('Error al procesar el pago. Por favor, intenta de nuevo.');
     setShowPaymentForm(false);
     setIsLoading(false);
@@ -226,7 +218,6 @@ export default function CheckoutPage() {
       const initOnvoPayment = () => {
         // Verificar si el SDK está disponible
         if (window.onvo && typeof window.onvo.pay === 'function') {
-          console.log('🚀 Inicializando ONVO SDK...');
           
           try {
             // Limpiar cualquier instancia anterior
@@ -235,7 +226,6 @@ export default function CheckoutPage() {
               container.innerHTML = '';
             }
             
-            console.log('🚀 Renderizando formulario de pago...');
             
             // Renderizar el componente de pago
             window.onvo.pay({
@@ -246,14 +236,12 @@ export default function CheckoutPage() {
               paymentType: "one_time"
             }).render('#onvo-payment-container');
             
-            console.log('✅ Formulario de pago de ONVO renderizado exitosamente');
             
           } catch (error) {
             console.error('❌ Error al renderizar ONVO SDK:', error);
             setError('Error al cargar el formulario de pago. Por favor, recarga la página.');
           }
         } else {
-          console.log('⏳ Esperando SDK de ONVO...');
           // Reintentar después de un breve delay
           setTimeout(initOnvoPayment, 100);
         }
@@ -269,19 +257,19 @@ export default function CheckoutPage() {
       <Navbar />
       
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-raven-bold text-center mb-8">Checkout</h1>
+        <h1 className="text-4xl font-raven-semibold text-center mb-8 text-black">Checkout</h1>
         
         {!showPaymentForm ? (
           <div className="grid lg:grid-cols-2 gap-8 text-black">
             {/* Formulario de información del cliente */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-raven-bold mb-6">Información de Facturación</h2>
+            <div className="bg-white rounded-lg shadow-lg p-6 order-2 lg:order-1">
+            <h2 className="text-2xl font-raven-medium mb-6">Información de Facturación</h2>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Información personal */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm text-gray-700 mb-2 font-semibold">
                     Nombre *
                   </label>
                   <input
@@ -293,7 +281,7 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm text-gray-700 mb-2 font-semibold">
                     Apellidos *
                   </label>
                   <input
@@ -307,7 +295,7 @@ export default function CheckoutPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm text-gray-700 mb-2 font-semibold">
                   Email *
                 </label>
                 <input
@@ -320,7 +308,7 @@ export default function CheckoutPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm text-gray-700 mb-2 font-semibold">
                   Teléfono
                 </label>
                 <input
@@ -333,7 +321,7 @@ export default function CheckoutPage() {
 
               {/* Dirección */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm text-gray-700 mb-2 font-semibold">
                   Dirección
                 </label>
                 <input
@@ -346,7 +334,7 @@ export default function CheckoutPage() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm text-gray-700 mb-2 font-semibold">
                     Ciudad
                   </label>
                   <input
@@ -357,7 +345,7 @@ export default function CheckoutPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm text-gray-700 mb-2 font-semibold">
                     Provincia
                   </label>
                   <input
@@ -368,10 +356,8 @@ export default function CheckoutPage() {
                   />
                 </div>
               </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm text-gray-700 mb-2 font-semibold">
                     Código Postal
                   </label>
                   <input
@@ -380,22 +366,6 @@ export default function CheckoutPage() {
                     onChange={(e) => handleInputChange('address.postcode', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#EC1D25]"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    País
-                  </label>
-                  <select
-                    value={customerInfo.address.country}
-                    onChange={(e) => handleInputChange('address.country', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#EC1D25]"
-                  >
-                    <option value="CR">Costa Rica</option>
-                    <option value="US">Estados Unidos</option>
-                    <option value="CA">Canadá</option>
-                    <option value="MX">México</option>
-                  </select>
-                </div>
               </div>
 
               {error && (
@@ -407,16 +377,16 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#EC1D25] text-white py-3 px-6 rounded-lg font-raven-bold text-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="block w-full bg-black text-white py-3 rounded-md font-raven-medium text-lg hover:bg-[#EC1D25] transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg text-center disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Procesando...' : 'Proceder al Pago'}
               </button>
             </form>
-          </div>
+            </div>
 
           {/* Resumen de la orden */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-raven-bold mb-6">Resumen de tu Orden</h2>
+          <div className="bg-white rounded-lg shadow-lg p-6 order-1 lg:order-2">
+            <h2 className="text-2xl font-raven-medium mb-6">Resumen de tu Orden</h2>
             
             <div className="space-y-4 mb-6">
               {cart.items.map((item) => (
@@ -427,35 +397,31 @@ export default function CheckoutPage() {
                     className="w-16 h-16 object-cover rounded"
                   />
                   <div className="flex-1">
-                    <h3 className="font-medium">{item.name}</h3>
+                    <p className="font-bold">{item.name}</p>
                     {item.selectedSize && (
-                      <p className="text-sm text-gray-600">Talla: {item.selectedSize}</p>
+                      <p className="text-sm text-gray-600 font-semibold">Talla: {item.selectedSize}</p>
                     )}
                     {item.selectedColor && (
-                      <p className="text-sm text-gray-600">Color: {item.selectedColor}</p>
+                      <p className="text-sm text-gray-600 font-semibold">Color: {item.selectedColor}</p>
                     )}
-                    <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
+                    <p className="text-sm text-gray-600 font-semibold">Cantidad: {item.quantity}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">{formatCurrency(item.price * item.quantity)}</p>
+                    <p className="font-semibold">{formatCurrency(item.price * item.quantity)}</p>
                   </div>
                 </div>
               ))}
             </div>
 
             <div className="border-t pt-4 space-y-2">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>{formatCurrency(cart.totalPrice)}</span>
-              </div>
-              <div className="flex justify-between font-raven-bold text-lg">
+              <div className="flex justify-between font-urbanist text-lg font-bold">
                 <span>Total:</span>
                 <span className="text-[#EC1D25]">{formatCurrency(cart.totalPrice)}</span>
               </div>
             </div>
 
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium mb-2">Método de Pago</h3>
+              <h3 className="font-medium font-urbanist text-lg">Método de Pago</h3>
               <div className="flex items-center gap-2">
                 <img 
                   src="/onvo-logo.png" 
@@ -472,10 +438,10 @@ export default function CheckoutPage() {
         </div>
         ) : (
           /* Formulario de pago de ONVO */
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-3xl mx-auto overflow-x-hidden">
             <div className="bg-white rounded-lg shadow-lg p-8">
               <div className="text-center mb-6">
-                <h2 className="text-3xl font-raven-bold mb-2">Completar Pago</h2>
+                <h2 className="text-3xl font-medium text-black font-urbanist">Completar Pago</h2>
                 <p className="text-gray-600">Completa tu pago de forma segura con ONVO Pay</p>
               </div>
               

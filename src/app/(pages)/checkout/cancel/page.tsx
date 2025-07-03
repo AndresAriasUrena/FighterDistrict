@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { IoCartOutline, IoStorefront, IoInformationCircle } from 'react-icons/io5';
 
 export default function CheckoutCancelPage() {
   const searchParams = useSearchParams();
@@ -56,77 +57,73 @@ export default function CheckoutCancelPage() {
   };
 
   return (
-    <div className="bg-[#E9E9E9]">
+    <div className="min-h-screen bg-[#E9E9E9]">
       <Navbar />
       
-      <div className="min-h-screen container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-500 hover:shadow-xl">
             {/* Header de cancelación */}
-            <div className="bg-yellow-500 text-white px-8 py-6 text-center">
+            <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-8 py-8 text-center">
               <div className="flex justify-center mb-4">
-                <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center transform transition-transform duration-500 hover:scale-110">
+                  <IoInformationCircle className="w-10 h-10 text-yellow-500" />
+                </div>
               </div>
-              <h1 className="text-4xl font-raven-bold mb-2">Pago Cancelado</h1>
-              <p className="text-xl">Has cancelado el proceso de pago</p>
+              <h1 className="font-raven-bold text-4xl mb-2">Pago Cancelado</h1>
+              <p className="font-urbanist text-xl opacity-90">Has cancelado el proceso de pago</p>
             </div>
 
             {/* Contenido de la cancelación */}
             <div className="p-8">
               <div className="text-center mb-8">
-                <p className="text-gray-600 text-lg mb-4">
+                <p className="font-urbanist text-gray-600 text-lg mb-4">
                   No te preocupes, tu información no se ha perdido.
                 </p>
                 {orderInfo.orderId && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <p className="text-blue-800">
-                      <strong>Orden #{orderInfo.orderId}</strong> ha sido creada pero no procesada.
+                  <div className="bg-blue-50 border-2 border-blue-100 rounded-lg p-6 mb-6 transform transition-all duration-300 hover:shadow-md">
+                    <p className="font-urbanist font-semibold text-blue-900">
+                      Orden #{orderInfo.orderId}
                     </p>
-                    <p className="text-blue-700 text-sm mt-2">
-                      Puedes intentar pagar de nuevo si lo deseas.
+                    <p className="font-urbanist text-blue-700 mt-2">
+                      Tu orden ha sido creada pero no procesada. Puedes intentar pagar de nuevo si lo deseas.
                     </p>
                   </div>
                 )}
               </div>
 
               {/* Opciones disponibles */}
-              <div className="space-y-4 mb-8">
-                <h2 className="text-2xl font-raven-bold text-center mb-6">¿Qué te gustaría hacer?</h2>
+              <div className="space-y-8">
+                <h2 className="font-raven-medium text-2xl text-black text-center mb-6">¿Qué te gustaría hacer?</h2>
                 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="border border-gray-200 rounded-lg p-6 text-center hover:border-[#EC1D25] transition-colors">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="bg-white flex flex-col justify-end rounded-lg p-6 text-center transform transition-all duration-300 hover:shadow-xl border-2 border-gray-100 hover:border-[#EC1D25]">
                     <div className="mb-4">
-                      <svg className="w-12 h-12 text-[#EC1D25] mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m6.5 6h7" />
-                      </svg>
+                      <IoCartOutline className="w-12 h-12 text-[#EC1D25] mx-auto transform transition-transform duration-300 hover:scale-110" />
                     </div>
-                    <h3 className="font-raven-bold text-lg mb-2">Revisar mi Carrito</h3>
-                    <p className="text-gray-600 text-sm mb-4">
-                      Vuelve a tu carrito para revisar los productos o modificar cantidades
+                    <h3 className="font-medium font-urbanist text-black text-xl mb-3">Revisar mi Carrito</h3>
+                    <p className="font-urbanist text-gray-600 mb-6">
+                      Vuelve a tu carrito para revisar los productos
                     </p>
                     <button
                       onClick={handleRestoreCart}
-                      className="w-full bg-[#EC1D25] text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                      className="w-full bg-black text-white px-6 py-3 rounded-md font-urbanist font-semibold hover:bg-[#EC1D25] transition-all duration-300 transform hover:scale-105"
                     >
                       Ir al Carrito
                     </button>
                   </div>
 
-                  <div className="border border-gray-200 rounded-lg p-6 text-center hover:border-[#EC1D25] transition-colors">
+                  <div className="bg-white flex flex-col justify-end rounded-lg p-6 text-center transform transition-all duration-300 hover:shadow-xl border-2 border-gray-100 hover:border-[#EC1D25]">
                     <div className="mb-4">
-                      <svg className="w-12 h-12 text-[#EC1D25] mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                      </svg>
+                      <IoStorefront className="w-12 h-12 text-[#EC1D25] mx-auto transform transition-transform duration-300 hover:scale-110" />
                     </div>
-                    <h3 className="font-raven-bold text-lg mb-2">Seguir Comprando</h3>
-                    <p className="text-gray-600 text-sm mb-4">
+                    <h3 className="font-medium font-urbanist text-black text-xl mb-3">Seguir Comprando</h3>
+                    <p className="font-urbanist text-gray-600 mb-6">
                       Explora más productos en nuestra tienda
                     </p>
                     <button
                       onClick={handleReturnToStore}
-                      className="w-full border border-[#EC1D25] text-[#EC1D25] py-2 px-4 rounded-lg hover:bg-[#EC1D25] hover:text-white transition-colors"
+                      className="w-full bg-white text-black px-6 py-3 rounded-md font-urbanist font-semibold border-2 border-black hover:bg-black hover:text-white transition-all duration-300 transform hover:scale-105"
                     >
                       Ir a la Tienda
                     </button>
@@ -135,27 +132,35 @@ export default function CheckoutCancelPage() {
               </div>
 
               {/* Información adicional */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="font-raven-bold text-lg mb-3">¿Necesitas ayuda?</h3>
-                <div className="space-y-2 text-gray-700">
-                  <p>• Si tuviste problemas con el pago, puedes intentar de nuevo</p>
-                  <p>• Acepta múltiples métodos de pago seguros</p>
-                  <p>• Si necesitas asistencia, contáctanos</p>
+              <div className="mt-8 bg-gray-50 rounded-lg p-8 border border-gray-100">
+                <h3 className="font-medium font-urbanist text-xl text-black mb-4">¿Necesitas ayuda?</h3>
+                <div className="space-y-3 font-urbanist text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#EC1D25]"></div>
+                    <p>Si tuviste problemas con el pago, puedes intentar de nuevo</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#EC1D25]"></div>
+                    <p>Aceptamos múltiples métodos de pago seguros</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#EC1D25]"></div>
+                    <p>Nuestro equipo de soporte está disponible para ayudarte</p>
+                  </div>
                 </div>
                 
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">
-                    <strong>Nota:</strong> Si creaste una orden, esta permanecerá en estado "pendiente" por 24 horas 
-                    antes de ser cancelada automáticamente.
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <p className="font-urbanist text-sm text-gray-500">
+                    <span className="font-semibold">Nota:</span> Las órdenes pendientes se mantienen por 24 horas antes de ser canceladas automáticamente.
                   </p>
                 </div>
               </div>
 
-              {/* Botón principal de acción */}
+              {/* Botón de inicio */}
               <div className="mt-8 text-center">
                 <button
                   onClick={() => router.push('/')}
-                  className="bg-gray-600 text-white px-8 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+                  className="bg-black text-white px-8 py-3 rounded-md font-urbanist font-semibold hover:bg-[#EC1D25] transition-all duration-300 transform hover:scale-105"
                 >
                   Volver al Inicio
                 </button>

@@ -94,6 +94,14 @@ const FilterSidebar = ({ onFilterChange, isMobileOpen = false, setIsMobileOpen =
     };
   };
 
+  // Función para formatear precios en colones
+  const formatPrice = (amount: number) => {
+    return new Intl.NumberFormat('es-CR', {
+      style: 'currency',
+      currency: 'CRC'
+    }).format(amount);
+  };
+
   useEffect(() => {
     const fetchFilters = async () => {
       try {
@@ -217,9 +225,14 @@ const FilterSidebar = ({ onFilterChange, isMobileOpen = false, setIsMobileOpen =
     }
   }, [selectedFilters, onFilterChange, loading]);
 
+  const handlePriceChange = (newRange: [number, number]) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      priceRange: newRange
+    }));
+  };
 
-
-    if (loading) {
+  if (loading) {
     return (
       <div className="hidden lg:block w-64 p-6 border-r border-gray-200">
         <h2 className="font-raven-regular text-4xl text-black mb-6">Tienda</h2>
@@ -488,26 +501,20 @@ const FilterSidebar = ({ onFilterChange, isMobileOpen = false, setIsMobileOpen =
           >
             <div className="space-y-4 pt-1">
               <div className="space-y-2">
-                <label className="text-sm text-gray-600">Precio mínimo: ${selectedFilters.priceRange[0]}</label>
+                <label className="text-sm text-gray-600">Precio mínimo: {formatPrice(selectedFilters.priceRange[0])}</label>
                 <input
                   type="range"
                   min={availableFilters.priceRange[0]}
                   max={availableFilters.priceRange[1]}
                   value={selectedFilters.priceRange[0]}
-                  onChange={(e) => {
-                    const newMin = parseInt(e.target.value);
-                    setSelectedFilters(prev => ({ 
-                      ...prev, 
-                      priceRange: [newMin, prev.priceRange[1]] as [number, number] 
-                    }));
-                  }}
+                  onChange={(e) => handlePriceChange([parseInt(e.target.value), selectedFilters.priceRange[1]])}
                   className="w-full h-2 bg-[#8B8B8B] rounded-lg appearance-none cursor-pointer slider"
                 />
               </div>
 
               <div className="flex justify-between text-sm text-gray-600 mt-2">
-                <span>Min: ${availableFilters.priceRange[0]}</span>
-                <span>Max: ${availableFilters.priceRange[1]}</span>
+                <span>Min: {formatPrice(availableFilters.priceRange[0])}</span>
+                <span>Max: {formatPrice(availableFilters.priceRange[1])}</span>
               </div>
 
             </div>
@@ -517,7 +524,7 @@ const FilterSidebar = ({ onFilterChange, isMobileOpen = false, setIsMobileOpen =
     </div>
   );
 
-    return (
+  return (
     <>
       {/* Overlay móvil */}
       {isMobileOpen && (

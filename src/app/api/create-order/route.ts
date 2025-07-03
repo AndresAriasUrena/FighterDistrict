@@ -109,12 +109,10 @@ export async function POST(request: NextRequest) {
       ]
     };
 
-    console.log('Creando orden en WooCommerce:', orderData);
 
     const response = await api.post('orders', orderData);
     const order = response.data;
 
-    console.log('Orden creada exitosamente:', order.id);
 
     return NextResponse.json({
       success: true,

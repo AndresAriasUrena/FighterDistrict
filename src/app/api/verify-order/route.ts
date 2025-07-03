@@ -13,14 +13,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('🔍 Verificando orden en WooCommerce:', orderId)
 
     // Obtener la orden de WooCommerce
     const response = await woocommerce.get(`orders/${orderId}`)
     const order = response.data
 
-    console.log('📋 Estado de la orden:', order.status)
-    console.log('💰 Total de la orden:', order.total)
 
     return NextResponse.json({
       success: true,

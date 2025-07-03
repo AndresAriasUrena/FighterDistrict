@@ -119,6 +119,15 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
     }
   }, [product, searchParams]);
 
+  // Función para formatear precios en colones
+  const formatPrice = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('es-CR', {
+      style: 'currency',
+      currency: 'CRC'
+    }).format(numAmount || 0);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#E9E9E9] flex items-center justify-center">
@@ -254,12 +263,12 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
               {/* Price */}
               <div className="flex items-center gap-4">
                 <p className="font-urbanist font-semibold text-xl text-black">
-                  ${(parseFloat(product.price || '0') || 0).toFixed(2)}
+                {formatPrice(product.price || '0')}
                 </p>
                 {product.on_sale && product.regular_price && (
                   <>
                     <p className="font-urbanist text-lg text-gray-500 line-through">
-                      ${(parseFloat(product.regular_price || '0') || 0).toFixed(2)}
+                    {formatPrice(product.price || '0')}
                     </p>
                     <p className="bg-[#EC1D25] text-white px-2 py-1 rounded-md text-sm font-urbanist font-bold">
                       -{Math.round((((parseFloat(product.regular_price || '0') || 0) - (parseFloat(product.price || '0') || 0)) / (parseFloat(product.regular_price || '0') || 1)) * 100)}%

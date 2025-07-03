@@ -49,6 +49,14 @@ export default function ProductCard({
   const currentSize = sizeClasses[size];
   const productHref = href || `/products/${id}`;
 
+  // Función para formatear precios en colones
+  const formatPrice = (amount: number) => {
+    return new Intl.NumberFormat('es-CR', {
+      style: 'currency',
+      currency: 'CRC'
+    }).format(amount || 0);
+  };
+
   return (
     <Link href={productHref} className={`block ${className}`}>
       <div className={`
@@ -90,7 +98,7 @@ export default function ProductCard({
             font-bold 
             text-black/60
           `}>
-            ${(price || 0).toFixed(2)}
+            {formatPrice(price)}
           </span>
         </div>
 

@@ -16,6 +16,15 @@ interface SortOption {
     label: string;
 }
 
+// Función para formatear precios en colones
+const formatPrice = (amount: number) => {
+    return new Intl.NumberFormat('es-CR', {
+        style: 'currency',
+        currency: 'CRC'
+    }).format(amount);
+};
+
+// Opciones de ordenamiento
 const sortOptions: SortOption[] = [
     { value: 'default', label: 'Orden por defecto' },
     { value: 'name_asc', label: 'Nombre A-Z' },

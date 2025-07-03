@@ -89,9 +89,6 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    console.log('🚀 ONVO Checkout Session - Formato simplificado');
-    console.log('📤 Datos enviados:', JSON.stringify(checkoutData, null, 2));
-
     // Hacer la petición a ONVO
     const response = await fetch('https://api.onvopay.com/v1/checkout/sessions/one-time-link', {
       method: 'POST',
@@ -102,17 +99,12 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(checkoutData),
     });
 
-    console.log(`📥 ONVO Response: ${response.status} ${response.statusText}`);
 
     const responseData = await response.json();
 
     if (!response.ok) {
-      console.log('❌ ONVO Error:', responseData);
       throw new Error(`ONVO API Error: ${response.status} - ${JSON.stringify(responseData)}`);
     }
-
-    console.log('✅ Checkout Session creado!');
-    console.log('🔗 URL:', responseData.url);
 
     return NextResponse.json({
       type: 'checkout_session',
@@ -123,7 +115,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.log('💥 Error creando Checkout Session:', error.message);
     
     return NextResponse.json(
       { 

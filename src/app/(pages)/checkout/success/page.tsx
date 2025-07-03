@@ -70,8 +70,7 @@ export default function CheckoutSuccessPage() {
         return;
       }
 
-      console.log('Verificando orden:', orderId);
-      console.log('Payment Intent ID:', paymentIntentIdFromUrl);
+
 
       // Verificar el estado de la orden a través de nuestra API
       const response = await fetch(`/api/verify-order?orderId=${orderId}`);
@@ -82,7 +81,6 @@ export default function CheckoutSuccessPage() {
       }
 
       const order = result.order;
-      console.log('Estado de la orden:', order.status);
       
       setOrderDetails(order);
 
@@ -125,12 +123,15 @@ export default function CheckoutSuccessPage() {
     });
   };
 
+  // Mover la verificación aquí, antes de cualquier return
+  const isPaymentSuccessful = orderDetails?.status === 'processing' || orderDetails?.status === 'completed';
+
   if (loading) {
     return (
-      <div className="bg-[#E9E9E9] flex items-center justify-center">
-        <div className="min-h-screen text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#EC1D25] mx-auto mb-4"></div>
-          <p className="text-xl text-gray-600">Verificando tu pago...</p>
+      <div className="min-h-screen bg-[#E9E9E9] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#EC1D25] border-t-transparent mx-auto mb-6"></div>
+          <p className="font-urbanist text-lg text-gray-600">Verificando tu pago...</p>
         </div>
       </div>
     );
@@ -138,16 +139,16 @@ export default function CheckoutSuccessPage() {
 
   if (error) {
     return (
-      <div className="bg-[#E9E9E9]">
+      <div className="min-h-screen bg-[#E9E9E9]">
         <Navbar />
-        <div className="min-h-screen container mx-auto px-4 py-16">
+        <div className="container mx-auto px-4 py-16">
           <div className="max-w-2xl mx-auto text-center">
-            <div className="bg-red-100 border border-red-300 rounded-lg p-8">
-              <h1 className="text-3xl font-raven-bold text-red-800 mb-4">Error</h1>
-              <p className="text-red-700 mb-6">{error}</p>
+            <div className="bg-white shadow-lg rounded-lg p-8 border-2 border-red-200">
+              <h1 className="font-raven-bold text-3xl text-[#EC1D25] mb-4">Error en el Pago</h1>
+              <p className="font-urbanist text-gray-600 mb-6">{error}</p>
               <button
                 onClick={() => router.push('/store')}
-                className="bg-[#EC1D25] text-white px-8 py-3 rounded-lg hover:bg-red-700 transition-colors"
+                className="bg-black text-white px-8 py-3 rounded-md font-urbanist font-semibold hover:bg-[#EC1D25] transition-all duration-300 transform hover:scale-105"
               >
                 Volver a la Tienda
               </button>
@@ -159,135 +160,144 @@ export default function CheckoutSuccessPage() {
     );
   }
 
-  const isPaymentSuccessful = orderDetails?.status === 'processing' || orderDetails?.status === 'completed';
+  // Verificar si tenemos los detalles de la orden antes de renderizar
+  if (!orderDetails) {
+    return (
+      <div className="min-h-screen bg-[#E9E9E9]">
+        <Navbar />
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-2xl mx-auto text-center">
+            <div className="bg-white shadow-lg rounded-lg p-8 border-2 border-yellow-200">
+              <h1 className="font-raven-bold text-3xl text-yellow-600 mb-4">Orden No Encontrada</h1>
+              <p className="font-urbanist text-gray-600 mb-6">No se encontraron detalles de la orden.</p>
+              <button
+                onClick={() => router.push('/store')}
+                className="bg-black text-white px-8 py-3 rounded-md font-urbanist font-semibold hover:bg-[#EC1D25] transition-all duration-300 transform hover:scale-105"
+              >
+                Volver a la Tienda
+              </button>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#E9E9E9] text-black">
+    <div className="min-h-screen bg-[#E9E9E9]">
       <Navbar />
       
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
           {isPaymentSuccessful ? (
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-500 hover:shadow-xl">
               {/* Header de éxito */}
-              <div className="bg-green-500 text-white px-8 py-6 text-center">
+              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-8 text-center">
                 <div className="flex justify-center mb-4">
-                  <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center transform transition-transform duration-500 hover:scale-110">
+                    <svg className="w-10 h-10 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
                 </div>
-                <h1 className="text-4xl font-raven-bold mb-2">¡Pago Exitoso!</h1>
-                <p className="text-xl">Tu orden ha sido procesada correctamente</p>
+                <h1 className="font-raven-bold text-4xl mb-2">¡Pago Exitoso!</h1>
+                <p className="font-urbanist text-xl opacity-90">Tu orden ha sido procesada correctamente</p>
               </div>
 
               {/* Detalles de la orden */}
               <div className="p-8">
                 <div className="grid md:grid-cols-2 gap-8">
                   {/* Información de la orden */}
-                  <div>
-                    <h2 className="text-2xl font-raven-bold mb-4">Detalles de la Orden</h2>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Número de Orden:</span>
-                        <span className="font-medium">#{orderDetails.id}</span>
+                  <div className="space-y-6">
+                    <h2 className="font-medium font-urbanist text-2xl text-black mb-4">Detalles de la Orden</h2>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="font-urbanist text-gray-600">Número de Orden:</span>
+                        <span className="font-urbanist font-semibold text-black">#{orderDetails.id}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Estado:</span>
-                        <span className="font-medium text-green-600 capitalize">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="font-urbanist text-gray-600">Estado:</span>
+                        <span className="font-urbanist font-semibold px-3 py-1 bg-green-50 text-green-600 rounded-full">
                           {orderDetails.status === 'processing' ? 'Procesando' : 'Completado'}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Fecha:</span>
-                        <span className="font-medium">{formatDate(orderDetails.date_created)}</span>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="font-urbanist text-gray-600">Fecha:</span>
+                        <span className="font-urbanist font-semibold text-black">{formatDate(orderDetails.date_created)}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total:</span>
-                        <span className="font-raven-bold text-xl text-[#EC1D25]">
-                          {formatCurrency(orderDetails.total)}
-                        </span>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="font-urbanist text-gray-600">Total:</span>
+                        <span className="font-urbanist font-bold text-lg text-black">{formatCurrency(orderDetails.total)}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Información del cliente */}
-                  <div>
-                    <h2 className="text-2xl font-raven-bold mb-4">Información de Facturación</h2>
-                    <div className="space-y-2">
-                      <p className="font-medium">
-                        {orderDetails.billing.first_name} {orderDetails.billing.last_name}
-                      </p>
-                      <p className="text-gray-600">{orderDetails.billing.email}</p>
+                  <div className="space-y-6">
+                    <h2 className="font-medium font-urbanist text-2xl text-black mb-4">Información del Cliente</h2>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="font-urbanist text-gray-600">Nombre:</span>
+                        <span className="font-urbanist font-semibold text-black">
+                          {orderDetails.billing.first_name} {orderDetails.billing.last_name}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="font-urbanist text-gray-600">Email:</span>
+                        <span className="font-urbanist font-semibold text-black">{orderDetails.billing.email}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Productos ordenados */}
+                {/* Productos */}
                 <div className="mt-8">
-                  <h2 className="text-2xl font-raven-bold mb-4">Productos Ordenados</h2>
+                  <h2 className="font-medium font-urbanist text-2xl text-black mb-6">Productos</h2>
                   <div className="space-y-4">
                     {orderDetails.line_items.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
-                        <div>
-                          <h3 className="font-medium">{item.name}</h3>
-                          <p className="text-gray-600">Cantidad: {item.quantity}</p>
+                      <div 
+                        key={index}
+                        className="flex justify-between items-center p-4 bg-gray-50 rounded-lg transition-all duration-300 hover:shadow-md"
+                      >
+                        <div className="flex-1">
+                          <h3 className="font-urbanist font-semibold text-black">{item.name}</h3>
+                          <p className="font-urbanist text-sm text-gray-600">Cantidad: {item.quantity}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium">{formatCurrency(item.total)}</p>
+                        <div className="font-urbanist font-bold text-black">
+                          {formatCurrency(item.total)}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Próximos pasos */}
-                <div className="mt-8 p-6 bg-blue-50 rounded-lg">
-                  <h3 className="font-raven-bold text-lg mb-3">¿Qué sigue ahora?</h3>
-                  <ul className="space-y-2 text-gray-700">
-                    <li>✅ Recibirás un email de confirmación en breve</li>
-                    <li>📦 Procesaremos tu orden en las próximas 24 horas</li>
-                    <li>🚚 Te enviaremos información de seguimiento cuando se envíe</li>
-                    <li>💬 Si tienes preguntas, contáctanos</li>
-                  </ul>
-                </div>
-
                 {/* Botones de acción */}
                 <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                   <button
                     onClick={() => router.push('/store')}
-                    className="bg-[#EC1D25] text-white px-8 py-3 rounded-lg hover:bg-red-700 transition-colors"
+                    className="bg-black text-white px-8 py-3 rounded-md font-urbanist font-semibold hover:bg-[#EC1D25] transition-all duration-300 transform hover:scale-105"
                   >
                     Seguir Comprando
                   </button>
                   <button
-                    onClick={() => router.push('/')}
-                    className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+                    onClick={() => window.print()}
+                    className="bg-white text-black px-8 py-3 rounded-md font-urbanist font-semibold border-2 border-black hover:bg-black hover:text-white transition-all duration-300 transform hover:scale-105"
                   >
-                    Volver al Inicio
+                    Imprimir Recibo
                   </button>
                 </div>
               </div>
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-              <div className="flex justify-center mb-4">
-                <svg className="w-16 h-16 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <h1 className="text-3xl font-raven-bold mb-4">Pago Pendiente</h1>
-              <p className="text-gray-600 mb-6">
-                Tu orden está siendo procesada. El estado actual es: <strong>{orderDetails?.status}</strong>
+              <p className="font-medium font-urbanist text-3xl text-[#EC1D25] mb-4">Estado de Orden Inválido</p>
+              <p className="font-urbanist text-gray-600 mb-6">
+                Lo sentimos, no pudimos procesar tu orden. Por favor, contacta a soporte.
               </p>
               <button
-                onClick={() => window.location.reload()}
-                className="bg-[#EC1D25] text-white px-8 py-3 rounded-lg hover:bg-red-700 transition-colors mr-4"
-              >
-                Verificar de Nuevo
-              </button>
-              <button
                 onClick={() => router.push('/store')}
-                className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+                className="bg-black text-white px-8 py-3 rounded-md font-urbanist font-semibold hover:bg-[#EC1D25] transition-all duration-300 transform hover:scale-105"
               >
                 Volver a la Tienda
               </button>
@@ -295,7 +305,6 @@ export default function CheckoutSuccessPage() {
           )}
         </div>
       </div>
-
       <Footer />
     </div>
   );

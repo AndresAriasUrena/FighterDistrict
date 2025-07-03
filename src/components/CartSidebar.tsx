@@ -17,6 +17,14 @@ export default function CartSidebar() {
     clearCart 
   } = useCart();
 
+  // Función para formatear precios en colones
+  const formatPrice = (amount: number) => {
+    return new Intl.NumberFormat('es-CR', {
+      style: 'currency',
+      currency: 'CRC'
+    }).format(amount);
+  };
+
   return (
     <>
       {/* Overlay con animación de fade */}
@@ -136,7 +144,7 @@ export default function CartSidebar() {
 
                       {/* Price con animación */}
                       <div className="mt-2 font-urbanist font-bold text-black transition-all duration-300">
-                        ${((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                        {formatPrice((item.price || 0) * (item.quantity || 0))}
                       </div>
 
                       {/* Quantity Controls con animaciones */}
@@ -216,7 +224,7 @@ export default function CartSidebar() {
                   Subtotal:
                 </span>
                 <span className="font-raven-bold text-xl text-black transition-all duration-300 animate-pulse">
-                  ${(cart.totalPrice || 0).toFixed(2)}
+                  {formatPrice(cart.totalPrice || 0)}
                 </span>
               </div>
 
