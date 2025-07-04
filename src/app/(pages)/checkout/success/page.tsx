@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -30,7 +30,7 @@ interface OrderDetails {
   }>;
 }
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { clearCart } = useCart();
@@ -307,5 +307,24 @@ export default function CheckoutSuccessPage() {
       </div>
       <Footer />
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-[#E9E9E9] flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#EC1D25] border-t-transparent mx-auto mb-6"></div>
+        <p className="font-urbanist text-lg text-gray-600">Cargando página de éxito...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 } 

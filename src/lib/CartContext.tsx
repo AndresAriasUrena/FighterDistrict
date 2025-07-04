@@ -38,11 +38,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Guardar carrito en localStorage cuando cambie
-  useEffect(() => {
-    localStorage.setItem('fighterDistrict_cart', JSON.stringify(cart));
-  }, [cart]);
-
   // Sincronización entre pestañas/ventanas
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -100,20 +95,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   }, [cart]);
 
-  // Recalcular totales cuando cambien los items
-  useEffect(() => {
-    const totalItems = cart.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-    const totalPrice = cart.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
-    
-    if (cart.totalItems !== totalItems || cart.totalPrice !== totalPrice) {
-      setCart(prev => ({
-        ...prev,
-        totalItems,
-        totalPrice
-      }));
-    }
-  }, [cart.items, cart.totalItems, cart.totalPrice]);
-
   const getCartItemKey = (id: number, size?: string, color?: string) => {
     return `${id}-${size || 'no-size'}-${color || 'no-color'}`;
   };
@@ -130,28 +111,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cartItem.selectedColor === item.selectedColor
       );
 
+      let newItems;
       if (existingItemIndex >= 0) {
         // Si el item ya existe, aumentar la cantidad
-        const newItems = [...prev.items];
-        newItems[existingItemIndex].quantity += quantity;
-        // Asegurar que el price sea un número válido
-        newItems[existingItemIndex].price = Number(newItems[existingItemIndex].price) || 0;
-        return {
-          ...prev,
-          items: newItems
+        newItems = [...prev.items];
+        newItems[existingItemIndex] = {
+          ...newItems[existingItemIndex],
+          quantity: newItems[existingItemIndex].quantity + quantity,
+          price: Number(newItems[existingItemIndex].price) || 0
         };
       } else {
         // Si es un item nuevo, agregarlo
         const newItem: CartItem = {
           ...item,
           quantity,
-          price: Number(item.price) || 0 // Asegurar que price sea un número
+          price: Number(item.price) || 0
         };
-        return {
-          ...prev,
-          items: [...prev.items, newItem]
-        };
+        newItems = [...prev.items, newItem];
       }
+
+      // Calcular totales aquí mismo para evitar el efecto adicional
+      const totalItems = newItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      const totalPrice = newItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+
+      // Guardar en localStorage aquí mismo
+      const newCart = {
+        items: newItems,
+        totalItems,
+        totalPrice
+      };
+      localStorage.setItem('fighterDistrict_cart', JSON.stringify(newCart));
+
+      return newCart;
     });
 
     // Marcar el item como recién agregado
@@ -160,14 +151,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const removeFromCart = (id: number, size?: string, color?: string) => {
-    setCart(prev => ({
-      ...prev,
-      items: prev.items.filter(item => 
+    setCart(prev => {
+      const newItems = prev.items.filter(item => 
         !(item.id === id && 
           item.selectedSize === size && 
           item.selectedColor === color)
-      )
-    }));
+      );
+
+      // Calcular totales
+      const totalItems = newItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      const totalPrice = newItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+
+      // Guardar en localStorage
+      const newCart = {
+        items: newItems,
+        totalItems,
+        totalPrice
+      };
+      localStorage.setItem('fighterDistrict_cart', JSON.stringify(newCart));
+
+      return newCart;
+    });
   };
 
   const updateQuantity = (id: number, quantity: number, size?: string, color?: string) => {
@@ -176,24 +180,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setCart(prev => ({
-      ...prev,
-      items: prev.items.map(item =>
+    setCart(prev => {
+      const newItems = prev.items.map(item =>
         item.id === id && 
         item.selectedSize === size && 
         item.selectedColor === color
           ? { ...item, quantity }
           : item
-      )
-    }));
+      );
+
+      // Calcular totales
+      const totalItems = newItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      const totalPrice = newItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+
+      // Guardar en localStorage
+      const newCart = {
+        items: newItems,
+        totalItems,
+        totalPrice
+      };
+      localStorage.setItem('fighterDistrict_cart', JSON.stringify(newCart));
+
+      return newCart;
+    });
   };
 
   const clearCart = () => {
-    setCart({
+    const emptyCart = {
       items: [],
       totalItems: 0,
       totalPrice: 0
-    });
+    };
+    localStorage.setItem('fighterDistrict_cart', JSON.stringify(emptyCart));
+    setCart(emptyCart);
   };
 
   return (

@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { IoCartOutline, IoStorefront, IoInformationCircle } from 'react-icons/io5';
 
-export default function CheckoutCancelPage() {
+function CheckoutCancelContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [orderInfo, setOrderInfo] = useState<{orderId: string | null, stored: any}>({
@@ -172,5 +172,24 @@ export default function CheckoutCancelPage() {
 
       <Footer />
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-[#E9E9E9] flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#EC1D25] border-t-transparent mx-auto mb-6"></div>
+        <p className="font-urbanist text-lg text-gray-600">Cargando página de cancelación...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function CheckoutCancelPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CheckoutCancelContent />
+    </Suspense>
   );
 } 

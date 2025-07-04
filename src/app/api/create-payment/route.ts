@@ -3,7 +3,6 @@ import { createPaymentIntent } from '@/lib/onvo';
 
 export interface CreatePaymentRequest {
   total: number;
-  currency?: string;
   customerInfo: {
     firstName: string;
     lastName: string;
@@ -20,7 +19,7 @@ export interface CreatePaymentRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: CreatePaymentRequest = await request.json();
-    const { total, currency = 'USD', customerInfo, cartItems } = body;
+    const { total, customerInfo, cartItems } = body;
 
     // Validaciones
     if (!total || total <= 0) {
@@ -44,28 +43,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determinar el monto correcto según la moneda
-    let finalAmount: number;
-    let finalCurrency: string;
-    
-    // Si es USD, convertir a centavos
-    if (currency === 'USD') {
-      finalAmount = Math.round(total * 100); // Convertir a centavos para USD
-      finalCurrency = 'USD';
-    } else {
-      finalAmount = Math.round(total); // Colones ya en unidad correcta
-      finalCurrency = 'CRC';
-    }
-
     // Crear descripción del pedido
     const itemsDescription = cartItems
       .map(item => `${item.quantity}x ${item.name}`)
       .join(', ');
 
-    // Crear el payment intent en ONVO según documentación oficial
+    // Crear el payment intent en ONVO
     const paymentIntentData = {
-      amount: finalAmount,
-      currency: finalCurrency,
+      amount: Math.round(total), // Monto en colones
+      currency: 'CRC',
       description: `Pedido Fighter District - ${itemsDescription}`,
       captureMethod: 'automatic' as const,
       metadata: {
@@ -74,19 +60,12 @@ export async function POST(request: NextRequest) {
         customer_phone: customerInfo.phone || '',
         store: 'Fighter District',
         items: JSON.stringify(cartItems),
-        original_total: total.toString(),
-        final_amount: finalAmount.toString(),
-        final_currency: finalCurrency
+        total_amount: total.toString(),
+        currency: 'CRC'
       }
     };
 
-    console.log('=== ONVO PAYMENT INTENT DEBUG ===');
-    console.log('Datos enviados a ONVO:', JSON.stringify(paymentIntentData, null, 2));
-    
     const paymentIntent = await createPaymentIntent(paymentIntentData);
-
-    console.log('=== RESPUESTA DE ONVO ===');
-    console.log('Payment intent creado:', JSON.stringify(paymentIntent, null, 2));
 
     // Verificar que el payment intent fue creado correctamente
     if (!paymentIntent.id) {
