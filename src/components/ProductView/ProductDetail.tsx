@@ -27,6 +27,13 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [availableCombinations, setAvailableCombinations] = useState<{
+    [key: string]: string[];
+  }>({
+    color: [],
+    talla: []
+  });
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -38,6 +45,30 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
         }
 
         const wooProduct: WooCommerceProduct = await response.json();
+
+        // Si es un producto variable, procesar las combinaciones disponibles
+        if (wooProduct.type === 'variable' && wooProduct.available_variations) {
+          const combinations = {
+            color: [] as string[],
+            talla: [] as string[]
+          };
+
+          wooProduct.available_variations.forEach(variation => {
+            variation.attributes.forEach(attr => {
+              const name = attr.name.toLowerCase();
+              const option = attr.option;
+              if (name === 'color' && !combinations.color.includes(option)) {
+                combinations.color.push(option);
+              }
+              if (name === 'talla' && !combinations.talla.includes(option)) {
+                combinations.talla.push(option);
+              }
+            });
+          });
+
+          setAvailableCombinations(combinations);
+        }
+        
         setProduct(wooProduct);
 
         // Fetch related products
@@ -126,6 +157,31 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
       style: 'currency',
       currency: 'CRC'
     }).format(numAmount || 0);
+  };
+
+  // Función para verificar si una combinación está disponible
+  const isCombinationAvailable = (color: string, talla: string): boolean => {
+    if (!product?.available_variations) return true;
+    return product.available_variations.some(variation => {
+      const varColor = variation.attributes.find(attr => attr.name.toLowerCase() === 'color')?.option;
+      const varTalla = variation.attributes.find(attr => attr.name.toLowerCase() === 'talla')?.option;
+      return varColor === color && varTalla === talla;
+    });
+  };
+
+  // Manejadores para la selección de talla y color
+  const handleSizeSelect = (size: string) => {
+    if (selectedColor && !isCombinationAvailable(selectedColor, size)) {
+      setSelectedColor('');
+    }
+    setSelectedSize(size);
+  };
+
+  const handleColorSelect = (color: string) => {
+    if (selectedSize && !isCombinationAvailable(color, selectedSize)) {
+      setSelectedSize('');
+    }
+    setSelectedColor(color);
   };
 
   if (loading) {
@@ -282,18 +338,25 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
                 <div className="space-y-3">
                   <h3 className="font-urbanist font-extralight text-[#000000]/70 text-lg">Selecciona una talla</h3>
                   <div className="flex flex-wrap gap-2">
-                    {sizes.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`px-10 py-2 rounded-md font-urbanist font-semibold transition-colors ${selectedSize === size
-                            ? 'bg-black text-white'
-                            : 'bg-[#CFCFCF] text-black hover:bg-gray-400'
-                          }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {sizes.map((size) => {
+                      const isAvailable = selectedColor ? isCombinationAvailable(selectedColor, size) : true;
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => handleSizeSelect(size)}
+                          disabled={!isAvailable}
+                          className={`px-10 py-2 rounded-md font-urbanist font-semibold transition-colors 
+                            ${selectedSize === size
+                              ? 'bg-black text-white'
+                              : isAvailable
+                                ? 'bg-[#CFCFCF] text-black hover:bg-gray-400'
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -303,18 +366,25 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
                 <div className="space-y-3">
                   <h3 className="font-urbanist font-extralight text-[#000000]/70 text-lg">Selecciona la variante</h3>
                   <div className="flex flex-wrap gap-2">
-                    {colors.map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => setSelectedColor(color)}
-                        className={`px-6 py-2 rounded-md font-urbanist font-semibold transition-colors ${selectedColor === color
-                            ? 'bg-black text-white'
-                            : 'bg-[#CFCFCF] text-black hover:bg-gray-400'
-                          }`}
-                      >
-                        {color}
-                      </button>
-                    ))}
+                    {colors.map((color) => {
+                      const isAvailable = selectedSize ? isCombinationAvailable(color, selectedSize) : true;
+                      return (
+                        <button
+                          key={color}
+                          onClick={() => handleColorSelect(color)}
+                          disabled={!isAvailable}
+                          className={`px-6 py-2 rounded-md font-urbanist font-semibold transition-colors 
+                            ${selectedColor === color
+                              ? 'bg-black text-white'
+                              : isAvailable
+                                ? 'bg-[#CFCFCF] text-black hover:bg-gray-400'
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                          {color}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -346,10 +416,16 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
               {/* Add to Cart Button */}
               <button 
                 onClick={handleAddToCart}
-                className="w-full bg-black text-white py-4 rounded-md font-raven-medium text-lg hover:bg-[#EC1D25] duration-300 transition-all flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 hover:shadow-lg"
+                disabled={!selectedSize || !selectedColor || !isCombinationAvailable(selectedColor, selectedSize)}
+                className={`w-full py-4 rounded-md font-raven-medium text-lg duration-300 transition-all flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 hover:shadow-lg
+                  ${selectedSize && selectedColor && isCombinationAvailable(selectedColor, selectedSize)
+                    ? 'bg-black text-white hover:bg-[#EC1D25]'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
               >
                 <BsCart3 className="w-5 h-5 transition-transform duration-200" />
-                Añadir al carrito
+                {selectedSize && selectedColor && !isCombinationAvailable(selectedColor, selectedSize)
+                  ? 'Combinación no disponible'
+                  : 'Añadir al carrito'}
               </button>
 
               {/* Description */}

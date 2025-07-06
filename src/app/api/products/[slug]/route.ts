@@ -21,7 +21,25 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(response.data[0]);
+    const product = response.data[0];
+
+    // Si el producto es variable, obtener todas sus variaciones
+    if (product.type === 'variable') {
+      try {
+        const variations = await api.get(`products/${product.id}/variations`, {
+          per_page: 100,
+          status: 'publish',
+          orderby: 'menu_order',
+          order: 'asc'
+        });
+        
+        product.available_variations = variations.data;
+      } catch (variationError) {
+        console.error('Error fetching variations:', variationError);
+      }
+    }
+
+    return NextResponse.json(product);
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json(

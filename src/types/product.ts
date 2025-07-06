@@ -34,6 +34,23 @@ export interface WooCommerceAttribute {
   options: string[];
 }
 
+export interface WooCommerceAttributeValue {
+  id: number;
+  name: string;
+  option: string;
+}
+
+export interface WooCommerceVariation {
+  id: number;
+  attributes: WooCommerceAttributeValue[];
+  price: string;
+  regular_price: string;
+  sale_price: string;
+  is_in_stock: boolean;
+  stock_quantity: number | null;
+  stock_status: 'instock' | 'outofstock' | 'onbackorder';
+}
+
 export interface WooCommerceProduct {
   id: number;
   name: string;
@@ -76,6 +93,8 @@ export interface WooCommerceProduct {
   brands: WooCommerceBrand[];
   images: WooCommerceImage[];
   attributes: WooCommerceAttribute[];
+  variations: number[];
+  available_variations: WooCommerceVariation[];
   menu_order: number;
   meta_data: Array<{
     id: number;
