@@ -161,7 +161,10 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
 
   // Función para verificar si una combinación está disponible
   const isCombinationAvailable = (color: string, talla: string): boolean => {
-    if (!product?.available_variations) return true;
+    // Si no hay variaciones o no hay ambos atributos, no necesitamos verificar
+    if (!product?.available_variations || !sizes.length || !colors.length) return true;
+
+    // Si hay ambos atributos, verificar la combinación
     return product.available_variations.some(variation => {
       const varColor = variation.attributes.find(attr => attr.name.toLowerCase() === 'color')?.option;
       const varTalla = variation.attributes.find(attr => attr.name.toLowerCase() === 'talla')?.option;
@@ -169,20 +172,9 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
     });
   };
 
-  // Manejadores para la selección de talla y color
-  const handleSizeSelect = (size: string) => {
-    if (selectedColor && !isCombinationAvailable(selectedColor, size)) {
-      setSelectedColor('');
-    }
-    setSelectedSize(size);
-  };
-
-  const handleColorSelect = (color: string) => {
-    if (selectedSize && !isCombinationAvailable(color, selectedSize)) {
-      setSelectedSize('');
-    }
-    setSelectedColor(color);
-  };
+  // Manejadores para la selección
+  const handleSizeSelect = (size: string) => setSelectedSize(size);
+  const handleColorSelect = (color: string) => setSelectedColor(color);
 
   if (loading) {
     return (
@@ -338,25 +330,19 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
                 <div className="space-y-3">
                   <h3 className="font-urbanist font-extralight text-[#000000]/70 text-lg">Selecciona una talla</h3>
                   <div className="flex flex-wrap gap-2">
-                    {sizes.map((size) => {
-                      const isAvailable = selectedColor ? isCombinationAvailable(selectedColor, size) : true;
-                      return (
-                        <button
-                          key={size}
-                          onClick={() => handleSizeSelect(size)}
-                          disabled={!isAvailable}
-                          className={`px-10 py-2 rounded-md font-urbanist font-semibold transition-colors 
-                            ${selectedSize === size
-                              ? 'bg-black text-white'
-                              : isAvailable
-                                ? 'bg-[#CFCFCF] text-black hover:bg-gray-400'
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            }`}
-                        >
-                          {size}
-                        </button>
-                      );
-                    })}
+                    {sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => handleSizeSelect(size)}
+                        className={`px-10 py-2 rounded-md font-urbanist font-semibold transition-colors 
+                          ${selectedSize === size
+                            ? 'bg-black text-white'
+                            : 'bg-[#CFCFCF] text-black hover:bg-gray-400'
+                          }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
@@ -366,25 +352,19 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
                 <div className="space-y-3">
                   <h3 className="font-urbanist font-extralight text-[#000000]/70 text-lg">Selecciona la variante</h3>
                   <div className="flex flex-wrap gap-2">
-                    {colors.map((color) => {
-                      const isAvailable = selectedSize ? isCombinationAvailable(color, selectedSize) : true;
-                      return (
-                        <button
-                          key={color}
-                          onClick={() => handleColorSelect(color)}
-                          disabled={!isAvailable}
-                          className={`px-6 py-2 rounded-md font-urbanist font-semibold transition-colors 
-                            ${selectedColor === color
-                              ? 'bg-black text-white'
-                              : isAvailable
-                                ? 'bg-[#CFCFCF] text-black hover:bg-gray-400'
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            }`}
-                        >
-                          {color}
-                        </button>
-                      );
-                    })}
+                    {colors.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => handleColorSelect(color)}
+                        className={`px-6 py-2 rounded-md font-urbanist font-semibold transition-colors 
+                          ${selectedColor === color
+                            ? 'bg-black text-white'
+                            : 'bg-[#CFCFCF] text-black hover:bg-gray-400'
+                          }`}
+                      >
+                        {color}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
@@ -416,14 +396,32 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
               {/* Add to Cart Button */}
               <button 
                 onClick={handleAddToCart}
-                disabled={!selectedSize || !selectedColor || !isCombinationAvailable(selectedColor, selectedSize)}
+                disabled={
+                  // Si no hay atributos, siempre habilitado
+                  (sizes.length === 0 && colors.length === 0) ? false :
+                  // Si solo hay talla, verificar que esté seleccionada
+                  (sizes.length > 0 && colors.length === 0) ? !selectedSize :
+                  // Si solo hay color, verificar que esté seleccionado
+                  (sizes.length === 0 && colors.length > 0) ? !selectedColor :
+                  // Si hay ambos, verificar que estén seleccionados y la combinación sea válida
+                  !selectedSize || !selectedColor || !isCombinationAvailable(selectedColor, selectedSize)
+                }
                 className={`w-full py-4 rounded-md font-raven-medium text-lg duration-300 transition-all flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 hover:shadow-lg
-                  ${selectedSize && selectedColor && isCombinationAvailable(selectedColor, selectedSize)
-                    ? 'bg-black text-white hover:bg-[#EC1D25]'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                  ${
+                    // Si no hay atributos, habilitado
+                    (sizes.length === 0 && colors.length === 0) ||
+                    // Si solo hay talla y está seleccionada
+                    (sizes.length > 0 && colors.length === 0 && selectedSize) ||
+                    // Si solo hay color y está seleccionado
+                    (sizes.length === 0 && colors.length > 0 && selectedColor) ||
+                    // Si hay ambos y la combinación es válida
+                    (selectedSize && selectedColor && isCombinationAvailable(selectedColor, selectedSize))
+                      ? 'bg-black text-white hover:bg-[#EC1D25]'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
               >
                 <BsCart3 className="w-5 h-5 transition-transform duration-200" />
-                {selectedSize && selectedColor && !isCombinationAvailable(selectedColor, selectedSize)
+                {sizes.length > 0 && colors.length > 0 && selectedSize && selectedColor && !isCombinationAvailable(selectedColor, selectedSize)
                   ? 'Combinación no disponible'
                   : 'Añadir al carrito'}
               </button>
