@@ -1,26 +1,18 @@
 // src/app/api/products/[slug]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest, { params }: { params: { slug: string } }) {
-  const { slug } = params;
+export async function GET(req: NextRequest, context: { params: { slug: string } }) {
+  const { slug } = context.params;
 
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_WORDPRESS_API_URL}/wc/v3/products?slug=${slug}&consumer_key=${process.env.NEXT_PUBLIC_WC_CONSUMER_KEY}&consumer_secret=${process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET}`,
-      { cache: 'no-store' }
-    );
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_WORDPRESS_API_URL}/wc/v3/products?slug=${slug}&consumer_key=${process.env.NEXT_PUBLIC_WC_CONSUMER_KEY}&consumer_secret=${process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET}`
+  );
 
-    if (!res.ok) {
-      return NextResponse.json({ error: 'WooCommerce API error' }, { status: res.status });
-    }
+  const data = await res.json();
 
-    const data = await res.json();
-    return NextResponse.json(data[0] || {});
-  } catch (error) {
-    console.error('API error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
-  }
+  return NextResponse.json(data[0] || {});
 }
+
 
 
 // import { NextRequest, NextResponse } from 'next/server';
