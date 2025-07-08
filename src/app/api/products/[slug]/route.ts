@@ -1,67 +1,80 @@
 // src/app/api/products/[slug]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest, context: { params: { slug: string } }) {
-  const { slug } = context.params;
-
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_WORDPRESS_API_URL}/wc/v3/products?slug=${slug}&consumer_key=${process.env.NEXT_PUBLIC_WC_CONSUMER_KEY}&consumer_secret=${process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET}`
-  );
-
-  const data = await res.json();
-  return NextResponse.json(data[0] || {});
+interface RouteParams {
+  params: Promise<{ slug: string }>;
 }
 
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    // Await params in Next.js 15
+    const { slug } = await params;
 
+    // Verificar configuración
+    const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL;
+    const wcKey = process.env.NEXT_PUBLIC_WC_CONSUMER_KEY;
+    const wcSecret = process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET;
 
+    if (!wpUrl || !wcKey || !wcSecret) {
+      return NextResponse.json(
+        { error: 'Configuration error' },
+        { status: 500 }
+      );
+    }
 
-// import { NextRequest, NextResponse } from 'next/server';
-// import { api } from '@/lib/woocommerce';
+    // Buscar producto por slug
+    const productUrl = `${wpUrl}/wp-json/wc/v3/products?slug=${slug}&consumer_key=${wcKey}&consumer_secret=${wcSecret}`;
+    
+    const productResponse = await fetch(productUrl, {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store'
+    });
 
-// export async function GET(
-//   request: NextRequest,
-//   { params }: { params: Promise<{ slug: string }> }
-// ): Promise<NextResponse> {
-//   try {
-//     const { slug } = await params;
+    if (!productResponse.ok) {
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
+    }
 
-//     // Buscar producto por slug
-//     const response = await api.get("products", {
-//       slug: slug,
-//       per_page: 1
-//     });
+    const products = await productResponse.json();
+    
+    if (!Array.isArray(products) || products.length === 0) {
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
+    }
 
-//     if (!response.data || response.data.length === 0) {
-//       return NextResponse.json(
-//         { error: 'Product not found' },
-//         { status: 404 }
-//       );
-//     }
+    const product = products[0];
 
-//     const product = response.data[0];
-
-//     // Si el producto es variable, obtener todas sus variaciones
-//     if (product.type === 'variable') {
-//       try {
-//         const variations = await api.get(`products/${product.id}/variations`, {
-//           per_page: 100,
-//           status: 'publish',
-//           orderby: 'menu_order',
-//           order: 'asc'
-//         });
+    // Si es un producto variable, obtener las variaciones
+    if (product.type === 'variable' && product.id) {
+      try {
+        const variationsUrl = `${wpUrl}/wp-json/wc/v3/products/${product.id}/variations?consumer_key=${wcKey}&consumer_secret=${wcSecret}&per_page=100`;
         
-//         product.available_variations = variations.data;
-//       } catch (variationError) {
-//         console.error('Error fetching variations:', variationError);
-//       }
-//     }
+        const variationsResponse = await fetch(variationsUrl, {
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store'
+        });
 
-//     return NextResponse.json(product);
-//   } catch (error) {
-//     console.error('Error fetching product:', error);
-//     return NextResponse.json(
-//       { error: 'Failed to fetch product' },
-//       { status: 500 }
-//     );
-//   }
-// } 
+        if (variationsResponse.ok) {
+          const variations = await variationsResponse.json();
+          product.available_variations = variations;
+        }
+      } catch (error) {
+        console.error('Error fetching variations:', error);
+        // No falla si no puede obtener las variaciones
+      }
+    }
+
+    return NextResponse.json(product);
+
+  } catch (error) {
+    console.error('Error in product API:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

@@ -113,7 +113,10 @@ export default function CheckoutPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          total: cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+          total: cart.items.reduce((sum, item) => {
+            const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+            return sum + (price * item.quantity);
+          }, 0),
           currency: 'CRC',
           customerInfo: {
             ...customerInfo,
@@ -407,7 +410,7 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-600 font-semibold">Cantidad: {item.quantity}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{formatCurrency(item.price * item.quantity)}</p>
+                  <p className="font-semibold">{formatCurrency((typeof item.price === 'string' ? parseFloat(item.price) : item.price) * item.quantity)}</p>
                   </div>
                 </div>
               ))}

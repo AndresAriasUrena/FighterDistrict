@@ -144,7 +144,7 @@ export default function CartSidebar() {
 
                       {/* Price con animación */}
                       <div className="mt-2 font-urbanist font-bold text-black transition-all duration-300">
-                        {formatPrice((item.price || 0) * (item.quantity || 0))}
+                      {formatPrice((typeof item.price === 'string' ? parseFloat(item.price) || 0 : item.price || 0) * (item.quantity || 0))}
                       </div>
 
                       {/* Quantity Controls con animaciones */}

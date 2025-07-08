@@ -1,30 +1,59 @@
+// src/components/Homepage/ProductSection.tsx
 import Link from 'next/link';
 import ProductCard from '../ui/ProductCard';
-import SimpleProductGrid from '../ui/SimpleProductGrid'; // 👈 Nuevo import
-import { api } from "@/lib/woocommerce";
-import { WooCommerceProduct, transformWooCommerceProduct } from "@/types/product";
+import SimpleProductGrid from '../ui/SimpleProductGrid';
+import { Product } from "@/types/product";
+
+async function fetchProducts() {
+  try {
+    // Usar nuestra API route en lugar de llamar directamente a WooCommerce
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    
+    // Fetch best sellers
+    const bestSellersRes = await fetch(`${baseUrl}/api/products?orderby=popularity&per_page=3`, {
+      cache: 'no-store'
+    });
+    
+    if (!bestSellersRes.ok) {
+      throw new Error('Failed to fetch best sellers');
+    }
+    
+    const bestSellers: Product[] = await bestSellersRes.json();
+    
+    // Fetch new products
+    const newProductsRes = await fetch(`${baseUrl}/api/products?orderby=date&order=desc&per_page=3`, {
+      cache: 'no-store'
+    });
+    
+    if (!newProductsRes.ok) {
+      throw new Error('Failed to fetch new products');
+    }
+    
+    const newProducts: Product[] = await newProductsRes.json();
+    
+    return { bestSellers, newProducts };
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return { bestSellers: [], newProducts: [] };
+  }
+}
 
 export default async function ProductSection() {
-  try {
-    const bestSellersRes = await api.get("products", {
-      per_page: 3,
-      orderby: 'popularity'
-    });
+  const { bestSellers, newProducts } = await fetchProducts();
 
-    const newProductsRes = await api.get("products", {
-      per_page: 3,
-      orderby: 'date',
-      order: 'desc'
-    });
-
-    const bestSellersWoo: WooCommerceProduct[] = bestSellersRes.data;
-    const newProductsWoo: WooCommerceProduct[] = newProductsRes.data;
-
-    const bestSellers = bestSellersWoo.map(transformWooCommerceProduct);
-    const newProducts = newProductsWoo.map(transformWooCommerceProduct);
-
+  if (bestSellers.length === 0 && newProducts.length === 0) {
     return (
-      <div className="mx-auto max-w-7xl px-4 lg:px-8">
+      <div className="bg-gray-50 py-12">
+        <div className="container mx-auto px-4 lg:px-8">
+          <p className="text-center text-gray-500">No hay productos disponibles en este momento</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 lg:px-8">
+      {bestSellers.length > 0 && (
         <section className="pb-16 w-full">
           <div className="mx-auto w-full">
             <div className="flex justify-between items-center mb-8 w-full">
@@ -61,9 +90,11 @@ export default async function ProductSection() {
             </SimpleProductGrid>
           </div>
         </section>
+      )}
 
-        <section className="border-t border-gray-200">
-          <div className=" mx-auto">
+      {newProducts.length > 0 && (
+        <section className="border-t border-gray-200 pt-16">
+          <div className="mx-auto">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl md:text-3xl font-raven-bold text-black uppercase tracking-wide">
                 NUEVOS DROPS
@@ -99,16 +130,7 @@ export default async function ProductSection() {
             </SimpleProductGrid>
           </div>
         </section>
-      </div>
-    );
-  } catch (error) {
-    console.error('Error loading products:', error);
-    return (
-      <div className="bg-gray-50 py-12">
-        <div className="container mx-auto px-4 lg:px-8">
-          <p className="text-center text-gray-500">Error al cargar productos</p>
-        </div>
-      </div>
-    );
-  }
+      )}
+    </div>
+  );
 }

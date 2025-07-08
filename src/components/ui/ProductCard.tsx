@@ -6,30 +6,7 @@ import Image from 'next/image';
 import { useContext } from 'react';
 import { CartContext } from '@/lib/CartContext';
 import { IoCart, IoCheckmark } from 'react-icons/io5';
-
-// Interfaz para el producto
-export interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  price: string;
-  regular_price?: string;
-  sale_price?: string;
-  images: Array<{ 
-    src: string; 
-    alt?: string;
-    name?: string;
-  }>;
-  categories?: Array<{ 
-    id: number; 
-    name: string; 
-    slug: string;
-  }>;
-  stock_status?: string;
-  stock_quantity?: number | null;
-  short_description?: string;
-  on_sale?: boolean;
-}
+import { Product } from '@/types/product';
 
 // Props del componente
 export interface ProductCardProps {

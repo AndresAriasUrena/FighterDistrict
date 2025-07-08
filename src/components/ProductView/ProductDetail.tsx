@@ -6,7 +6,8 @@ import { WooCommerceProduct, transformWooCommerceProduct, Product } from '@/type
 import { IoStar } from 'react-icons/io5';
 import { BsCart3 } from 'react-icons/bs';
 import Link from 'next/link';
-import ProductCard, { ProductGrid } from '@/components/ui/ProductCard';
+import ProductCard from '@/components/ui/ProductCard';
+import SimpleProductGrid from '../ui/SimpleProductGrid';
 import { useCart } from '@/lib/CartContext';
 
 interface ProductDetailProps {
@@ -442,8 +443,8 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
           </div>
         </div>
 
-        {/* Related Products */}
-        {relatedProducts.length > 0 && (
+         {/* Related Products */}
+         {relatedProducts.length > 0 && (
           <div>
             <div className="p-6 lg:p-8">
               <div className="flex justify-between items-center mb-8 w-full">
@@ -474,19 +475,14 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
                 </Link>
               </div>
 
-              <ProductGrid cols={3} gap="small">
+              <SimpleProductGrid cols={3} gap="small">
                 {relatedProducts.map((relatedProduct) => (
                   <ProductCard
                     key={relatedProduct.id}
-                    id={relatedProduct.id}
-                    name={relatedProduct.name}
-                    category={relatedProduct.category}
-                    price={relatedProduct.price}
-                    image={relatedProduct.image}
-                    href={`/products/${relatedProduct.slug}`}
+                    product={relatedProduct}
                   />
                 ))}
-              </ProductGrid>
+              </SimpleProductGrid>
             </div>
           </div>
         )}

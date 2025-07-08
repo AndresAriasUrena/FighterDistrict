@@ -6,19 +6,7 @@ import ProductCard from '../ui/ProductCard';
 import { IoFilter, IoClose, IoReload } from 'react-icons/io5';
 import { SearchContext } from '@/lib/SearchContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  price: string;
-  regular_price?: string;
-  sale_price?: string;
-  images: Array<{ src: string; alt?: string }>;
-  categories?: Array<{ id: number; name: string; slug: string }>;
-  stock_status?: string;
-  stock_quantity?: number | null;
-}
+import { Product } from '@/types/product';
 
 interface ProductGridProps {
   filters: any;

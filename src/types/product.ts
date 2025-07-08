@@ -51,17 +51,20 @@ export interface WooCommerceVariation {
   stock_status: 'instock' | 'outofstock' | 'onbackorder';
 }
 
+// Tipo base de WooCommerce
 export interface WooCommerceProduct {
   id: number;
   name: string;
   slug: string;
   permalink: string;
   date_created: string;
+  date_created_gmt: string;
   date_modified: string;
-  type: 'simple' | 'grouped' | 'external' | 'variable';
-  status: 'draft' | 'pending' | 'private' | 'publish';
+  date_modified_gmt: string;
+  type: string;
+  status: string;
   featured: boolean;
-  catalog_visibility: 'visible' | 'catalog' | 'search' | 'hidden';
+  catalog_visibility: string;
   description: string;
   short_description: string;
   sku: string;
@@ -75,10 +78,17 @@ export interface WooCommerceProduct {
   downloadable: boolean;
   manage_stock: boolean;
   stock_quantity: number | null;
-  stock_status: 'instock' | 'outofstock' | 'onbackorder';
-  backorders: 'no' | 'notify' | 'yes';
+  stock_status: string;
+  backorders: string;
+  backorders_allowed: boolean;
+  backordered: boolean;
   sold_individually: boolean;
   weight: string;
+  dimensions: {
+    length: string;
+    width: string;
+    height: string;
+  };
   shipping_required: boolean;
   shipping_taxable: boolean;
   shipping_class: string;
@@ -86,49 +96,107 @@ export interface WooCommerceProduct {
   reviews_allowed: boolean;
   average_rating: string;
   rating_count: number;
+  related_ids: number[];
+  upsell_ids: number[];
+  cross_sell_ids: number[];
   parent_id: number;
   purchase_note: string;
-  categories: WooCommerceCategory[];
-  tags: WooCommerceTag[];
-  brands: WooCommerceBrand[];
-  images: WooCommerceImage[];
-  attributes: WooCommerceAttribute[];
-  variations: number[];
-  available_variations: WooCommerceVariation[];
-  menu_order: number;
-  meta_data: Array<{
+  categories: Array<{
     id: number;
-    key: string;
-    value: string;
+    name: string;
+    slug: string;
+  }>;
+  tags: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
+  images: Array<{
+    id: number;
+    date_created: string;
+    date_created_gmt: string;
+    date_modified: string;
+    date_modified_gmt: string;
+    src: string;
+    name: string;
+    alt: string;
+  }>;
+  attributes: Array<{
+    id: number;
+    name: string;
+    position: number;
+    visible: boolean;
+    variation: boolean;
+    options: string[];
+  }>;
+  default_attributes: any[];
+  variations: number[];
+  grouped_products: number[];
+  menu_order: number;
+  meta_data: any[];
+  brands?: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
+  available_variations?: Array<{
+    id: number;
+    attributes: Array<{
+      id: number;
+      name: string;
+      option: string;
+    }>;
+    price: string;
+    regular_price: string;
+    sale_price: string;
+    is_in_stock: boolean;
+    stock_quantity: number | null;
+    stock_status: string;
   }>;
 }
 
-// Tipo simplificado para usar en componentes
+// Tipo simplificado para uso en la aplicación
 export interface Product {
   id: number;
   name: string;
-  price: number;
-  category: string;
-  image: string;
   slug: string;
-  description?: string;
-  shortDescription?: string;
-  inStock: boolean;
-  featured?: boolean;
+  price: string;
+  regular_price?: string;
+  sale_price?: string;
+  images: Array<{
+    src: string;
+    alt?: string;
+    name?: string;
+  }>;
+  categories?: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
+  stock_status?: string;
+  stock_quantity?: number | null;
+  short_description?: string;
+  on_sale?: boolean;
 }
 
-// Función helper para convertir WooCommerce product a Product
+// Función para transformar de WooCommerce a nuestro tipo
 export function transformWooCommerceProduct(wooProduct: WooCommerceProduct): Product {
   return {
     id: wooProduct.id,
     name: wooProduct.name,
-    price: parseFloat(wooProduct.price) || 0,
-    category: wooProduct.categories[0]?.name || 'Sin categoría',
-    image: wooProduct.images[0]?.src || '/placeholder-product.jpg',
     slug: wooProduct.slug,
-    description: wooProduct.description,
-    shortDescription: wooProduct.short_description,
-    inStock: wooProduct.stock_status === 'instock',
-    featured: wooProduct.featured
+    price: wooProduct.price || wooProduct.regular_price,
+    regular_price: wooProduct.regular_price,
+    sale_price: wooProduct.sale_price,
+    images: wooProduct.images.map(img => ({
+      src: img.src,
+      alt: img.alt || wooProduct.name,
+      name: img.name
+    })),
+    categories: wooProduct.categories,
+    stock_status: wooProduct.stock_status,
+    stock_quantity: wooProduct.stock_quantity,
+    short_description: wooProduct.short_description,
+    on_sale: wooProduct.on_sale
   };
-} 
+}
