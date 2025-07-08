@@ -9,9 +9,9 @@ export async function GET(req: NextRequest, context: { params: { slug: string } 
   );
 
   const data = await res.json();
-
   return NextResponse.json(data[0] || {});
 }
+
 
 
 

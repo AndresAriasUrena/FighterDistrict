@@ -1,10 +1,55 @@
+// src/lib/CartContext.tsx
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { CartItem, Cart, CartContextType } from '@/types/cart';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+// Tipos para el carrito
+export interface CartItem {
+  id: number;
+  name: string;
+  price: string | number;
+  quantity: number;
+  image: string;
+  slug: string;
+  selectedSize?: string;
+  selectedColor?: string;
+  maxQuantity?: number;
+}
 
+export interface Cart {
+  items: CartItem[];
+  totalItems: number;
+  totalPrice: number;
+}
+
+export interface CartContextType {
+  cart: Cart;
+  isCartOpen: boolean;
+  justAdded: number | null;
+  addToCart: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
+  removeFromCart: (id: number, size?: string, color?: string) => void;
+  updateQuantity: (id: number, quantity: number, size?: string, color?: string) => void;
+  clearCart: () => void;
+  openCart: () => void;
+  closeCart: () => void;
+  toggleCart: () => void;
+}
+
+// Contexto con valor por defecto
+export const CartContext = createContext<CartContextType>({
+  cart: { items: [], totalItems: 0, totalPrice: 0 },
+  isCartOpen: false,
+  justAdded: null,
+  addToCart: () => {},
+  removeFromCart: () => {},
+  updateQuantity: () => {},
+  clearCart: () => {},
+  openCart: () => {},
+  closeCart: () => {},
+  toggleCart: () => {},
+});
+
+// Provider del contexto
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart>({
     items: [],
@@ -14,95 +59,44 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [justAdded, setJustAdded] = useState<number | null>(null);
 
-  // Cargar carrito del localStorage al inicializar
+  // Cargar carrito desde localStorage al montar
   useEffect(() => {
-    const savedCart = localStorage.getItem('fighterDistrict_cart');
+    const savedCart = localStorage.getItem('fighterdistrict_cart');
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart);
-        // Asegurar que los valores numéricos estén definidos
-        setCart({
-          items: parsedCart.items || [],
-          totalItems: parsedCart.totalItems || 0,
-          totalPrice: parsedCart.totalPrice || 0
-        });
+        setCart(parsedCart);
       } catch (error) {
-        console.error('Error loading cart from localStorage:', error);
-        // Si hay error, usar valores por defecto
-        setCart({
-          items: [],
-          totalItems: 0,
-          totalPrice: 0
-        });
+        console.error('Error loading cart:', error);
       }
     }
   }, []);
 
-  // Sincronización entre pestañas/ventanas
+  // Guardar carrito en localStorage cuando cambie
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      // Solo procesar cambios del carrito desde otras ventanas
-      if (e.key === 'fighterDistrict_cart' && e.newValue && e.storageArea === localStorage) {
-        try {
-          const newCart = JSON.parse(e.newValue);
-          // Actualizar el carrito con los datos de la otra ventana
-          setCart({
-            items: newCart.items || [],
-            totalItems: newCart.totalItems || 0,
-            totalPrice: newCart.totalPrice || 0
-          });
-        } catch (error) {
-          console.error('Error syncing cart from other window:', error);
-        }
-      }
-    };
-
-    // Escuchar cambios en localStorage desde otras ventanas
-    window.addEventListener('storage', handleStorageChange);
-
-         return () => {
-       window.removeEventListener('storage', handleStorageChange);
-     };
-   }, []);
-
-  // Verificación adicional cuando la ventana vuelve a estar activa
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // La ventana volvió a estar activa, verificar si hay cambios en localStorage
-        const savedCart = localStorage.getItem('fighterDistrict_cart');
-        if (savedCart) {
-          try {
-            const storedCart = JSON.parse(savedCart);
-            // Solo actualizar si los datos son diferentes
-            if (JSON.stringify(cart) !== savedCart) {
-              setCart({
-                items: storedCart.items || [],
-                totalItems: storedCart.totalItems || 0,
-                totalPrice: storedCart.totalPrice || 0
-              });
-            }
-          } catch (error) {
-            console.error('Error checking cart on visibility change:', error);
-          }
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    if (cart.items.length > 0) {
+      localStorage.setItem('fighterdistrict_cart', JSON.stringify(cart));
+    } else {
+      localStorage.removeItem('fighterdistrict_cart');
+    }
   }, [cart]);
 
-  const getCartItemKey = (id: number, size?: string, color?: string) => {
-    return `${id}-${size || 'no-size'}-${color || 'no-color'}`;
-  };
+  // Calcular totales
+  useEffect(() => {
+    const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalPrice = cart.items.reduce((sum, item) => {
+      const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+      return sum + (price * item.quantity);
+    }, 0);
 
-  const openCart = () => setIsCartOpen(true);
-  const closeCart = () => setIsCartOpen(false);
-  const toggleCart = () => setIsCartOpen(!isCartOpen);
+    setCart(prev => ({
+      ...prev,
+      totalItems,
+      totalPrice
+    }));
+  }, [cart.items]);
 
+  // Funciones del carrito
   const addToCart = (item: Omit<CartItem, 'quantity'>, quantity: number = 1) => {
     setCart(prev => {
       const existingItemIndex = prev.items.findIndex(cartItem => 
@@ -111,67 +105,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cartItem.selectedColor === item.selectedColor
       );
 
-      let newItems;
       if (existingItemIndex >= 0) {
-        // Si el item ya existe, aumentar la cantidad
-        newItems = [...prev.items];
-        newItems[existingItemIndex] = {
-          ...newItems[existingItemIndex],
-          quantity: newItems[existingItemIndex].quantity + quantity,
-          price: Number(newItems[existingItemIndex].price) || 0
-        };
+        // Actualizar cantidad si ya existe
+        const newItems = [...prev.items];
+        newItems[existingItemIndex].quantity += quantity;
+        return { ...prev, items: newItems };
       } else {
-        // Si es un item nuevo, agregarlo
+        // Agregar nuevo item
         const newItem: CartItem = {
           ...item,
           quantity,
-          price: Number(item.price) || 0
+          price: typeof item.price === 'string' ? parseFloat(item.price) : item.price
         };
-        newItems = [...prev.items, newItem];
+        return { ...prev, items: [...prev.items, newItem] };
       }
-
-      // Calcular totales aquí mismo para evitar el efecto adicional
-      const totalItems = newItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-      const totalPrice = newItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
-
-      // Guardar en localStorage aquí mismo
-      const newCart = {
-        items: newItems,
-        totalItems,
-        totalPrice
-      };
-      localStorage.setItem('fighterDistrict_cart', JSON.stringify(newCart));
-
-      return newCart;
     });
 
-    // Marcar el item como recién agregado
+    // Mostrar feedback visual
     setJustAdded(item.id);
     setTimeout(() => setJustAdded(null), 2000);
+    
+    // Abrir carrito
+    setIsCartOpen(true);
   };
 
   const removeFromCart = (id: number, size?: string, color?: string) => {
-    setCart(prev => {
-      const newItems = prev.items.filter(item => 
+    setCart(prev => ({
+      ...prev,
+      items: prev.items.filter(item => 
         !(item.id === id && 
           item.selectedSize === size && 
           item.selectedColor === color)
-      );
-
-      // Calcular totales
-      const totalItems = newItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-      const totalPrice = newItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
-
-      // Guardar en localStorage
-      const newCart = {
-        items: newItems,
-        totalItems,
-        totalPrice
-      };
-      localStorage.setItem('fighterDistrict_cart', JSON.stringify(newCart));
-
-      return newCart;
-    });
+      )
+    }));
   };
 
   const updateQuantity = (id: number, quantity: number, size?: string, color?: string) => {
@@ -180,64 +146,54 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setCart(prev => {
-      const newItems = prev.items.map(item =>
-        item.id === id && 
-        item.selectedSize === size && 
-        item.selectedColor === color
+    setCart(prev => ({
+      ...prev,
+      items: prev.items.map(item => 
+        (item.id === id && 
+         item.selectedSize === size && 
+         item.selectedColor === color)
           ? { ...item, quantity }
           : item
-      );
-
-      // Calcular totales
-      const totalItems = newItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
-      const totalPrice = newItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
-
-      // Guardar en localStorage
-      const newCart = {
-        items: newItems,
-        totalItems,
-        totalPrice
-      };
-      localStorage.setItem('fighterDistrict_cart', JSON.stringify(newCart));
-
-      return newCart;
-    });
+      )
+    }));
   };
 
   const clearCart = () => {
-    const emptyCart = {
+    setCart({
       items: [],
       totalItems: 0,
       totalPrice: 0
-    };
-    localStorage.setItem('fighterDistrict_cart', JSON.stringify(emptyCart));
-    setCart(emptyCart);
+    });
+    setIsCartOpen(false);
   };
+
+  const openCart = () => setIsCartOpen(true);
+  const closeCart = () => setIsCartOpen(false);
+  const toggleCart = () => setIsCartOpen(prev => !prev);
 
   return (
     <CartContext.Provider value={{
       cart,
       isCartOpen,
       justAdded,
-      openCart,
-      closeCart,
-      toggleCart,
       addToCart,
       removeFromCart,
       updateQuantity,
       clearCart,
-      getCartItemKey
+      openCart,
+      closeCart,
+      toggleCart
     }}>
       {children}
     </CartContext.Provider>
   );
 }
 
+// Hook personalizado para usar el carrito
 export function useCart() {
-  const context = useContext(CartContext);
-  if (context === undefined) {
+  const context = React.useContext(CartContext);
+  if (!context) {
     throw new Error('useCart must be used within a CartProvider');
   }
   return context;
-} 
+}

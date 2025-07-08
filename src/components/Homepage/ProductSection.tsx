@@ -1,26 +1,25 @@
 import Link from 'next/link';
-import ProductCard, { ProductGrid } from '../ui/ProductCard';
+import ProductCard from '../ui/ProductCard';
+import SimpleProductGrid from '../ui/SimpleProductGrid'; // 👈 Nuevo import
 import { api } from "@/lib/woocommerce";
 import { WooCommerceProduct, transformWooCommerceProduct } from "@/types/product";
 
 export default async function ProductSection() {
   try {
-    // Obtener productos más vendidos
     const bestSellersRes = await api.get("products", {
       per_page: 3,
-      orderby: 'popularity'  // Los más populares/vendidos
+      orderby: 'popularity'
     });
 
-    // Obtener productos más nuevos
     const newProductsRes = await api.get("products", {
       per_page: 3,
-      orderby: 'date',  // Ordenar por fecha de creación
-      order: 'desc'     // Más recientes primero
+      orderby: 'date',
+      order: 'desc'
     });
-    
+
     const bestSellersWoo: WooCommerceProduct[] = bestSellersRes.data;
     const newProductsWoo: WooCommerceProduct[] = newProductsRes.data;
-    
+
     const bestSellers = bestSellersWoo.map(transformWooCommerceProduct);
     const newProducts = newProductsWoo.map(transformWooCommerceProduct);
 
@@ -32,43 +31,34 @@ export default async function ProductSection() {
               <h2 className="text-2xl md:text-3xl font-raven-bold text-black uppercase tracking-wide">
                 NUESTROS PRODUCTOS MÁS VENDIDOS
               </h2>
-              
-              <Link 
+              <Link
                 href="/products"
                 className="group flex items-center gap-2 text-black hover:text-gray-700 transition-colors"
               >
                 <span className="font-urbanist font-semibold text-sm md:text-base text-[#373737]">
                   Ver todos
                 </span>
-                <svg 
-                  className="w-4 h-4 group-hover:translate-x-1 transition-transform" 
-                  fill="none" 
-                  stroke="currentColor" 
+                <svg
+                  className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M9 5l7 7-7 7" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
                   />
                 </svg>
               </Link>
             </div>
 
-            <ProductGrid cols={3} gap="small">
+            <SimpleProductGrid cols={3} gap="small">
               {bestSellers.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  category={product.category}
-                  price={product.price}
-                  image={product.image}
-                  href={`/products/${product.slug}`}
-                />
+                <ProductCard key={product.id} product={product} />
               ))}
-            </ProductGrid>
+            </SimpleProductGrid>
           </div>
         </section>
 
@@ -78,48 +68,39 @@ export default async function ProductSection() {
               <h2 className="text-2xl md:text-3xl font-raven-bold text-black uppercase tracking-wide">
                 NUEVOS DROPS
               </h2>
-              
-              <Link 
-            href="/store"
-            className="group flex items-center gap-2 text-black hover:text-gray-700 transition-colors"
+
+              <Link
+                href="/store"
+                className="group flex items-center gap-2 text-black hover:text-gray-700 transition-colors"
               >
                 <span className="font-urbanist font-medium text-sm md:text-base">
                   Ver todos
                 </span>
-                <svg 
-                  className="w-4 h-4 group-hover:translate-x-1 transition-transform" 
-                  fill="none" 
-                  stroke="currentColor" 
+                <svg
+                  className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M9 5l7 7-7 7" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
                   />
                 </svg>
               </Link>
             </div>
 
-            <ProductGrid cols={3} gap="small">
+            <SimpleProductGrid cols={3} gap="small">
               {newProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  category={product.category}
-                  price={product.price}
-                  image={product.image}
-                  href={`/products/${product.slug}`}
-                />
+                <ProductCard key={product.id} product={product} />
               ))}
-            </ProductGrid>
+            </SimpleProductGrid>
           </div>
         </section>
       </div>
     );
-
   } catch (error) {
     console.error('Error loading products:', error);
     return (
@@ -130,4 +111,4 @@ export default async function ProductSection() {
       </div>
     );
   }
-} 
+}

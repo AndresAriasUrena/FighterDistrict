@@ -1,180 +1,168 @@
+// src/components/ui/ProductCard.tsx
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useContext } from 'react';
+import { CartContext } from '@/lib/CartContext';
+import { IoCart, IoCheckmark } from 'react-icons/io5';
 
-interface ProductCardProps {
-  id: string | number;
+// Interfaz para el producto
+export interface Product {
+  id: number;
   name: string;
-  category: string;
-  price: number;
-  image: string;
-  href?: string;
-  size?: 'small' | 'medium' | 'large';
-  className?: string;
+  slug: string;
+  price: string;
+  regular_price?: string;
+  sale_price?: string;
+  images: Array<{ 
+    src: string; 
+    alt?: string;
+    name?: string;
+  }>;
+  categories?: Array<{ 
+    id: number; 
+    name: string; 
+    slug: string;
+  }>;
+  stock_status?: string;
+  stock_quantity?: number | null;
+  short_description?: string;
+  on_sale?: boolean;
 }
 
-export default function ProductCard({ 
-  id, 
-  name, 
-  category, 
-  price, 
-  image, 
-  href,
-  size = 'medium',
-  className = ''
-}: ProductCardProps) {
-  const sizeClasses = {
-    small: {
-      container: 'w-full',
-      image: 'h-48 sm:h-52',
-      categoryPrice: 'text-xs sm:text-sm',
-      title: 'text-sm sm:text-base',
-      padding: 'p-3 sm:p-4'
-    },
-    medium: {
-      container: 'w-full',
-      image: 'h-56 sm:h-64 lg:h-72 xl:h-80',
-      categoryPrice: 'text-sm lg:text-base',
-      title: 'text-sm sm:text-base lg:text-lg',
-      padding: 'p-4 lg:p-5 xl:p-6'
-    },
-    large: {
-      container: 'w-full',
-      image: 'h-64 sm:h-72 lg:h-80 xl:h-96',
-      categoryPrice: 'text-base lg:text-lg',
-      title: 'text-base sm:text-lg lg:text-xl xl:text-2xl',
-      padding: 'p-5 lg:p-6 xl:p-8'
-    }
-  };
+// Props del componente
+export interface ProductCardProps {
+  product: Product;
+}
 
-  const currentSize = sizeClasses[size];
-  const productHref = href || `/products/${id}`;
+export default function ProductCard({ product }: ProductCardProps) {
+  const { addToCart, justAdded } = useContext(CartContext);
 
-  // Función para formatear precios en colones
-  const formatPrice = (amount: number) => {
+  // Función para formatear precio
+  const formatPrice = (price: string | number) => {
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
     return new Intl.NumberFormat('es-CR', {
       style: 'currency',
-      currency: 'CRC'
-    }).format(amount || 0);
+      currency: 'CRC',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(numPrice || 0);
   };
 
+  // Manejar agregar al carrito
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevenir navegación del Link
+    
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.images[0]?.src || '/placeholder.jpg',
+      slug: product.slug
+    });
+  };
+
+  // Verificar si está agotado
+  const isOutOfStock = product.stock_status === 'outofstock' || 
+                       (product.stock_quantity !== null && product.stock_quantity === 0);
+
   return (
-    <Link href={productHref} className={`block ${className}`}>
-      <div className={`
-        ${currentSize.container} 
-        bg-white 
-        rounded-md
-        shadow-sm 
-        hover:shadow-lg 
-        transition-all 
-        duration-300 
-        hover:scale-[1.02] 
-        overflow-hidden
-        group
-        h-full
-        flex
-        flex-col
-      `}>
-        {/* Header with Category and Price */}
-        <div className={`
-          ${currentSize.padding} 
-          pb-0 
-          flex 
-          justify-between 
-          items-start
-        `}>
-          <span className={`
-            ${currentSize.categoryPrice} 
-            text-black/40 
-            font-urbanist 
-            font-semibold
-            group-hover:text-gray-800
-            transition-colors
-          `}>
-            {category}
-          </span>
-          <span className={`
-            ${currentSize.categoryPrice} 
-            font-urbanist 
-            font-bold 
-            text-black/60
-          `}>
-            {formatPrice(price)}
-          </span>
-        </div>
-
-        {/* Product Image */}
-        <div className={`
-          ${currentSize.image} 
-          ${currentSize.padding} 
-          pt-2 
-          pb-2
-        `}>
-          <div className="relative w-full h-full rounded-lg overflow-hidden bg-gray-50 p-1">
+    <Link href={`/products/${product.slug}`} className="group">
+      <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
+        {/* Imagen del producto */}
+        <div className="relative aspect-square bg-gray-100">
+          {product.images && product.images[0] ? (
             <Image
-              src={image}
-              alt={name}
+              src={product.images[0].src}
+              alt={product.images[0].alt || product.name}
               fill
-              className="object-contain group-hover:scale-105 transition-transform duration-300 rounded-lg"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             />
-          </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              <IoCart size={48} />
+            </div>
+          )}
+          
+          {/* Badge de oferta */}
+          {product.on_sale && product.sale_price && (
+            <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-1 text-xs font-bold rounded">
+              OFERTA
+            </div>
+          )}
+          
+          {/* Badge de agotado */}
+          {isOutOfStock && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <span className="bg-white text-black px-4 py-2 rounded font-semibold">
+                AGOTADO
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Product Name */}
-        <div className={`${currentSize.padding} pt-0 flex-1 flex items-end`}>
-          <p className={`
-            ${currentSize.title} 
-            font-raven-regular
-            text-black 
-            group-hover:text-gray-800
-            transition-colors
-            leading-tight
-            w-full
-          `}>
-            {name}
-          </p>
+        {/* Información del producto */}
+        <div className="p-4">
+          {/* Categoría */}
+          {product.categories && product.categories[0] && (
+            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+              {product.categories[0].name}
+            </p>
+          )}
+
+          {/* Nombre del producto */}
+          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#EC1D25] transition-colors">
+            {product.name}
+          </h3>
+
+          {/* Precios */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              {product.sale_price ? (
+                <>
+                  <span className="text-lg font-bold text-[#EC1D25]">
+                    {formatPrice(product.sale_price)}
+                  </span>
+                  <span className="text-sm text-gray-500 line-through">
+                    {formatPrice(product.regular_price || product.price)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-lg font-bold text-gray-900">
+                  {formatPrice(product.price)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Botón de agregar al carrito */}
+          <button
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            className={`w-full py-2 px-4 rounded-md font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
+              isOutOfStock
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : justAdded === product.id
+                ? 'bg-green-600 text-white'
+                : 'bg-[#EC1D25] text-white hover:bg-red-700 transform hover:scale-105'
+            }`}
+          >
+            {justAdded === product.id ? (
+              <>
+                <IoCheckmark size={20} />
+                <span>Agregado</span>
+              </>
+            ) : (
+              <>
+                <IoCart size={20} />
+                <span>{isOutOfStock ? 'Agotado' : 'Agregar'}</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
     </Link>
   );
 }
-
-interface ProductGridProps {
-  children: React.ReactNode;
-  cols?: 1 | 2 | 3 | 4 | 5;
-  gap?: 'small' | 'medium' | 'large';
-  className?: string;
-}
-
-export function ProductGrid({ 
-  children, 
-  cols = 3, 
-  gap = 'medium',
-  className = '' 
-}: ProductGridProps) {
-  const gapClasses = {
-    small: 'gap-4 lg:gap-5',
-    medium: 'gap-6 lg:gap-8 xl:gap-10',
-    large: 'gap-8 lg:gap-10 xl:gap-12'
-  };
-
-  const colClasses = {
-    1: 'grid-cols-1',
-    2: 'grid-cols-1 sm:grid-cols-2',
-    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-    4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
-    5: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
-  };
-
-  return (
-    <div className={`
-      grid 
-      ${colClasses[cols]} 
-      ${gapClasses[gap]} 
-      w-full
-      ${className}
-    `}>
-      {children}
-    </div>
-  );
-} 
