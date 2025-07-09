@@ -20,9 +20,14 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [sortBy, setSortBy] = useState('date');
+  const [totalProducts, setTotalProducts] = useState(0);
   const { searchTerm } = useContext(SearchContext);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Configuración de paginación ajustable
+  const PRODUCTS_PER_PAGE = 24; // Aumentado de 12 a 24
+  const INITIAL_LOAD = 48; // Cargar más productos inicialmente
 
   // Función para obtener productos
   const fetchProducts = async (pageNum: number = 1, append: boolean = false) => {
@@ -30,12 +35,17 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
       setLoading(true);
       setError(null);
 
+      // Usar más productos en la primera carga
+      const perPage = pageNum === 1 ? INITIAL_LOAD : PRODUCTS_PER_PAGE;
+
       const params = new URLSearchParams({
-        per_page: '12',
+        per_page: perPage.toString(),
         page: pageNum.toString(),
         orderby: sortBy.split('-')[0],
         order: sortBy.includes('asc') ? 'asc' : 'desc'
       });
+
+      console.log(`Fetching products: page ${pageNum}, per_page ${perPage}`);
 
       const response = await fetch(`/api/products?${params}`);
 
@@ -50,19 +60,74 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
         throw new Error('Formato de respuesta inválido');
       }
 
+      console.log(`Received ${data.length} products`);
+
       // Actualizar productos
       if (append) {
-        setProducts(prev => [...prev, ...data]);
+        setProducts(prev => {
+          // Evitar duplicados
+          const existingIds = new Set(prev.map(p => p.id));
+          const newProducts = data.filter(p => !existingIds.has(p.id));
+          return [...prev, ...newProducts];
+        });
       } else {
         setProducts(data);
       }
 
-      // Verificar si hay más páginas
+      // Obtener información de paginación de los headers
       const totalPages = parseInt(response.headers.get('X-Total-Pages') || '1');
-      setHasMore(pageNum < totalPages);
+      const totalCount = parseInt(response.headers.get('X-Total') || data.length.toString());
+      
+      setTotalProducts(totalCount);
+      setHasMore(pageNum < totalPages && data.length === perPage);
+
+      console.log(`Total products available: ${totalCount}, Has more: ${pageNum < totalPages}`);
 
     } catch (err) {
       console.error('Error fetching products:', err);
+      setError(err instanceof Error ? err.message : 'Error desconocido al cargar productos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para cargar todos los productos
+  const loadAllProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams({
+        per_page: '100', // Máximo permitido por WooCommerce
+        page: '1',
+        orderby: sortBy.split('-')[0],
+        order: sortBy.includes('asc') ? 'asc' : 'desc'
+      });
+
+      console.log('Loading all products...');
+
+      const response = await fetch(`/api/products?${params}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || errorData.error || 'Error al cargar productos');
+      }
+
+      const data = await response.json();
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Formato de respuesta inválido');
+      }
+
+      console.log(`Loaded all ${data.length} products`);
+
+      setProducts(data);
+      setTotalProducts(data.length);
+      setHasMore(false);
+      setPage(1);
+
+    } catch (err) {
+      console.error('Error loading all products:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido al cargar productos');
     } finally {
       setLoading(false);
@@ -118,44 +183,18 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
       <div className="flex-1 p-4 lg:p-6">
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-            <IoClose className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-red-800 mb-2">
               Error al cargar productos
             </h3>
             <p className="text-red-600 mb-4">{error}</p>
             <button
               onClick={handleRetry}
-              className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+              className="flex items-center gap-2 mx-auto px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
             >
               <IoReload className="w-4 h-4" />
               Reintentar
             </button>
           </div>
-          
-          {/* Información de depuración en desarrollo */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 text-xs text-gray-500">
-              <p>URL: {window.location.origin}/api/products</p>
-              <p>Verifica tu conexión a WooCommerce</p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Renderizar estado de carga inicial
-  if (loading && products.length === 0) {
-    return (
-      <div className="flex-1 p-4 lg:p-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="bg-gray-200 aspect-square rounded-lg mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-            </div>
-          ))}
         </div>
       </div>
     );
@@ -170,12 +209,12 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
             Todos los Productos
           </h1>
           <p className="text-gray-600 mt-1">
-            {filteredProducts.length} productos encontrados
+            {filteredProducts.length} de {totalProducts} productos encontrados
             {searchTerm && ` para "${searchTerm}"`}
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           {/* Botón de filtros móvil */}
           <button
             onClick={onOpenFilters}
@@ -184,6 +223,16 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
             <IoFilter className="w-4 h-4" />
             Filtros
           </button>
+
+          {/* Botón para cargar todos */}
+          {hasMore && !loading && (
+            <button
+              onClick={loadAllProducts}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+            >
+              Ver todos ({totalProducts})
+            </button>
+          )}
 
           {/* Selector de ordenamiento */}
           <select
@@ -200,52 +249,75 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
         </div>
       </div>
 
-      {/* Grid de productos */}
-      {filteredProducts.length > 0 ? (
+      {/* Estado de carga inicial */}
+      {loading && products.length === 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="bg-gray-200 aspect-square rounded-lg mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+            </div>
+          ))}
+        </div>
+      ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {/* Grid de productos */}
+          {filteredProducts.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
 
-          {/* Botón de cargar más */}
-          {hasMore && !loading && (
-            <div className="text-center mt-8">
-              <button
-                onClick={() => {
-                  const nextPage = page + 1;
-                  setPage(nextPage);
-                  fetchProducts(nextPage, true);
-                }}
-                className="bg-black text-white px-6 py-3 rounded-md hover:bg-[#EC1D25] transition-colors duration-300"
-              >
-                Cargar más productos
-              </button>
+              {/* Botón de cargar más */}
+              {hasMore && !loading && (
+                <div className="text-center mt-8">
+                  <button
+                    onClick={() => {
+                      const nextPage = page + 1;
+                      setPage(nextPage);
+                      fetchProducts(nextPage, true);
+                    }}
+                    className="bg-black text-white px-6 py-3 rounded-md hover:bg-[#EC1D25] transition-colors duration-300"
+                  >
+                    Cargar más productos
+                  </button>
+                </div>
+              )}
+
+              {/* Mensaje cuando se han cargado todos */}
+              {!hasMore && products.length > INITIAL_LOAD && (
+                <div className="text-center mt-8 py-4 text-gray-500">
+                  ✓ Todos los productos han sido cargados ({filteredProducts.length} total)
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">
+                No se encontraron productos
+                {searchTerm && ` para "${searchTerm}"`}
+              </p>
+              {searchTerm && (
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-4 text-[#EC1D25] hover:underline"
+                >
+                  Limpiar búsqueda
+                </button>
+              )}
             </div>
           )}
         </>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">
-            No se encontraron productos
-            {searchTerm && ` para "${searchTerm}"`}
-          </p>
-          {searchTerm && (
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 text-[#EC1D25] hover:underline"
-            >
-              Limpiar búsqueda
-            </button>
-          )}
-        </div>
       )}
 
       {/* Indicador de carga adicional */}
       {loading && products.length > 0 && (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#EC1D25] border-t-transparent"></div>
+          <p className="mt-2 text-gray-500">Cargando más productos...</p>
         </div>
       )}
     </div>
