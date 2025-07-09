@@ -223,18 +223,27 @@ export default function CheckoutPage() {
         if (window.onvo && typeof window.onvo.pay === 'function') {
           
           try {
+            // Verificar que tenemos la publicKey
+            const publicKey = process.env.NEXT_PUBLIC_ONVO_PUBLISHABLE_KEY;
+            if (!publicKey) {
+              console.error('❌ ONVO_PUBLISHABLE_KEY no está configurada');
+              setError('Error de configuración: clave pública de ONVO no disponible');
+              return;
+            }
+
             // Limpiar cualquier instancia anterior
             const container = document.getElementById('onvo-payment-container');
             if (container) {
               container.innerHTML = '';
             }
             
+            console.log('🔑 Iniciando ONVO con publicKey:', publicKey.substring(0, 20) + '...');
             
             // Renderizar el componente de pago
             window.onvo.pay({
               onError: handlePaymentError,
               onSuccess: handlePaymentSuccess,
-              publicKey: process.env.NEXT_PUBLIC_ONVO_PUBLISHABLE_KEY || '',
+              publicKey: publicKey,
               paymentIntentId: paymentIntentId,
               paymentType: "one_time"
             }).render('#onvo-payment-container');

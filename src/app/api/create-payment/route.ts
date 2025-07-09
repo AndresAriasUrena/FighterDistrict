@@ -18,6 +18,15 @@ export interface CreatePaymentRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verificar que las credenciales de ONVO están configuradas
+    if (!process.env.NEXT_PUBLIC_ONVO_PUBLISHABLE_KEY || !process.env.ONVO_SECRET_KEY) {
+      console.error('❌ Credenciales de ONVO no configuradas');
+      return NextResponse.json(
+        { error: 'Error de configuración: credenciales de ONVO no disponibles' },
+        { status: 500 }
+      );
+    }
+
     const body: CreatePaymentRequest = await request.json();
     const { total, customerInfo, cartItems } = body;
 
@@ -52,15 +61,19 @@ export async function POST(request: NextRequest) {
     const roundedAmount = Math.round(total);
     
     // Validación adicional del monto
-    if (roundedAmount < 100) {
+    if (roundedAmount < 1) {
       return NextResponse.json(
-        { error: 'El monto mínimo debe ser 100 colones' },
+        { error: 'El monto mínimo debe ser 1 colón' },
         { status: 400 }
       );
     }
     
+    // ONVO espera el monto en céntimos (unidad más pequeña de CRC)
+    // 1 colón = 100 céntimos
+    const amountInCentimos = roundedAmount * 100;
+    
     const paymentIntentData = {
-      amount: roundedAmount, // Monto en colones
+      amount: amountInCentimos, // Monto en céntimos
       currency: 'CRC',
       description: `Pedido Fighter District - ${itemsDescription}`,
       captureMethod: 'automatic' as const,
@@ -76,7 +89,8 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('Creating payment intent with data:', {
-      amount: roundedAmount,
+      totalInColones: roundedAmount,
+      amountInCentimos: amountInCentimos,
       currency: 'CRC',
       description: paymentIntentData.description,
       itemsCount: cartItems.length
