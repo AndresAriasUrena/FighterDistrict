@@ -14,9 +14,12 @@ export async function GET(request: NextRequest) {
     const wcSecret = process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET;
 
     if (!wpUrl || !wcKey || !wcSecret) {
-      console.error('Missing WooCommerce configuration');
+      console.error('Missing WooCommerce configuration:', {
+        hasWpUrl: !!wpUrl,
+        hasWcKey: !!wcKey,
+        hasWcSecret: !!wcSecret
+      });
       
-      // Devolver array vacío en lugar de error para no romper la UI
       return NextResponse.json([], {
         headers: {
           'Cache-Control': 'no-store',
@@ -43,7 +46,7 @@ export async function GET(request: NextRequest) {
     const order = searchParams.get('order') || 'desc';
     const page = searchParams.get('page') || '1';
 
-    // Construir URL de WooCommerce
+    // Construir URL de WooCommerce - AQUÍ ESTÁ LA CORRECCIÓN
     const apiUrl = `${wpUrl}/wp-json/wc/v3/products`;
     const params = new URLSearchParams({
       consumer_key: wcKey,
@@ -55,17 +58,17 @@ export async function GET(request: NextRequest) {
       status: 'publish'
     });
 
-    console.log('Fetching products from:', `${apiUrl}?${params.toString().replace(wcSecret, '***')}`);
+    const fullUrl = `${apiUrl}?${params.toString()}`;
+    console.log('Fetching products from:', fullUrl.replace(wcSecret, '***'));
 
     // Hacer la petición a WooCommerce
-    const response = await fetch(`${apiUrl}?${params}`, {
+    const response = await fetch(fullUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'User-Agent': 'FighterDistrict/1.0'
       },
-      // No usar cache en fetch para controlar nosotros el cache
       cache: 'no-store'
     });
 
@@ -75,6 +78,7 @@ export async function GET(request: NextRequest) {
       console.error('WooCommerce API Error:', {
         status: response.status,
         statusText: response.statusText,
+        url: fullUrl.replace(wcSecret, '***'),
         error: errorText
       });
 
@@ -108,85 +112,37 @@ export async function GET(request: NextRequest) {
 
     // Validar que sea un array
     if (!Array.isArray(products)) {
-      console.error('Invalid response format:', products);
+      console.error('WooCommerce returned non-array:', typeof products);
       return NextResponse.json(
         { error: 'Invalid response format from WooCommerce' },
         { status: 500 }
       );
     }
 
-    // Transformar productos para asegurar que tienen la estructura correcta
-    const transformedProducts = products.map(product => ({
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      price: product.price || product.regular_price || '0',
-      regular_price: product.regular_price,
-      sale_price: product.sale_price,
-      images: product.images || [],
-      categories: product.categories || [],
-      stock_status: product.stock_status,
-      stock_quantity: product.stock_quantity,
-      short_description: product.short_description,
-      on_sale: product.on_sale
-    }));
-
     // Actualizar cache
-    cachedProducts = transformedProducts;
+    cachedProducts = products;
     cacheTimestamp = now;
 
-    // Obtener headers de paginación
-    const totalProducts = response.headers.get('X-WP-Total');
-    const totalPages = response.headers.get('X-WP-TotalPages');
+    console.log(`Successfully fetched ${products.length} products`);
 
-    // Devolver respuesta con headers útiles
-    return NextResponse.json(transformedProducts, {
+    // Retornar productos con headers de cache
+    return NextResponse.json(products, {
       headers: {
-        'X-Total-Count': totalProducts || '0',
-        'X-Total-Pages': totalPages || '1',
-        'X-Current-Page': page,
         'X-Cache': 'MISS',
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-        'Access-Control-Allow-Origin': '*'
+        'X-Products-Count': products.length.toString()
       }
     });
 
-  } catch (error) {
-    console.error('Unexpected error in products API:', error);
+  } catch (error: any) {
+    console.error('Fatal error in products API:', error);
     
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error occurred',
-        timestamp: new Date().toISOString()
+        message: error.message 
       },
       { status: 500 }
     );
-  }
-}
-
-// Endpoint para limpiar cache manualmente si es necesario
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    
-    if (body.action === 'clear-cache') {
-      cachedProducts = null;
-      cacheTimestamp = 0;
-      
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Cache cleared successfully' 
-      });
-    }
-
-    return NextResponse.json({ 
-      error: 'Invalid action' 
-    }, { status: 400 });
-    
-  } catch (error) {
-    return NextResponse.json({ 
-      error: 'Bad request' 
-    }, { status: 400 });
   }
 }

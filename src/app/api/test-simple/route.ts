@@ -9,7 +9,7 @@ export async function GET() {
     nodeEnv: process.env.NODE_ENV
   };
 
-  console.log('🔧 Environment Config:', {
+  console.log('Environment Config:', {
     wpUrl: config.wpUrl,
     hasKey: !!config.wcKey,
     hasSecret: !!config.wcSecret,
@@ -33,7 +33,7 @@ export async function GET() {
     // Test WooCommerce products endpoint
     const wcUrl = `${config.wpUrl}/wp-json/wc/v3/products?consumer_key=${config.wcKey}&consumer_secret=${config.wcSecret}&per_page=5`;
     
-    console.log('🚀 Fetching from:', wcUrl.replace(config.wcSecret, '***'));
+    console.log('Fetching from:', wcUrl.replace(config.wcSecret, '***'));
     
     const response = await fetch(wcUrl, {
       method: 'GET',
@@ -43,12 +43,12 @@ export async function GET() {
       }
     });
 
-    console.log('📡 Response Status:', response.status, response.statusText);
-    console.log('📡 Response Headers:', Object.fromEntries(response.headers.entries()));
+    console.log('Response Status:', response.status, response.statusText);
+    console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ WooCommerce Error:', errorText);
+      console.error('WooCommerce Error:', errorText);
       
       return NextResponse.json({
         error: 'WooCommerce API Error',
@@ -60,7 +60,7 @@ export async function GET() {
     }
 
     const products = await response.json();
-    console.log('✅ Products fetched:', Array.isArray(products) ? products.length : 'Not an array');
+    console.log('Products fetched:', Array.isArray(products) ? products.length : 'Not an array');
 
     return NextResponse.json({
       success: true,
@@ -79,7 +79,7 @@ export async function GET() {
     });
 
   } catch (error: any) {
-    console.error('💥 Fetch Error:', error.message);
+    console.error('Fetch Error:', error.message);
     
     return NextResponse.json({
       error: 'Network Error',
