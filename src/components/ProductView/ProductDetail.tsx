@@ -72,16 +72,56 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
         
         setProduct(wooProduct);
 
-        // Fetch related products
-        const relatedResponse = await fetch('/api/products?per_page=4');
+        /// 🔥 NUEVA LÓGICA DE PRODUCTOS RELACIONADOS
+      console.log(`🔗 Fetching related products for: ${wooProduct.name} (ID: ${wooProduct.id})`);
+      
+      try {
+        // Usar la nueva API de productos relacionados
+        const relatedResponse = await fetch(`/api/products/${wooProduct.id}/related`);
+        
         if (relatedResponse.ok) {
-          const relatedWooProducts: WooCommerceProduct[] = await relatedResponse.json();
-          const transformedRelated = relatedWooProducts
-            .filter(p => p.id !== wooProduct.id)
-            .slice(0, 3)
-            .map(transformWooCommerceProduct);
-          setRelatedProducts(transformedRelated);
+          const relatedData = await relatedResponse.json();
+          
+          console.log(`✅ Related products loaded:`, relatedData.map((p: any) => p.name));
+          setRelatedProducts(relatedData);
+        } else {
+          console.warn('❌ Related products API failed, using fallback');
+          
+          // Fallback: obtener productos de la misma categoría
+          const categoryIds = wooProduct.categories?.map(cat => cat.id) || [];
+          
+          if (categoryIds.length > 0) {
+            const fallbackResponse = await fetch(
+              `/api/products?per_page=4&exclude=${wooProduct.id}&category=${categoryIds[0]}`
+            );
+            
+            if (fallbackResponse.ok) {
+              const fallbackProducts: WooCommerceProduct[] = await fallbackResponse.json();
+              const transformedFallback = fallbackProducts
+                .slice(0, 3)
+                .map(transformWooCommerceProduct);
+              setRelatedProducts(transformedFallback);
+              console.log(`🔄 Fallback related products:`, transformedFallback.map(p => p.name));
+            }
+          } else {
+            // Último fallback: productos recientes
+            const lastResortResponse = await fetch('/api/products?per_page=4&orderby=date');
+            if (lastResortResponse.ok) {
+              const lastResortProducts: WooCommerceProduct[] = await lastResortResponse.json();
+              const transformedLastResort = lastResortProducts
+                .filter(p => p.id !== wooProduct.id)
+                .slice(0, 3)
+                .map(transformWooCommerceProduct);
+              setRelatedProducts(transformedLastResort);
+              console.log(`🆘 Last resort related products:`, transformedLastResort.map(p => p.name));
+              }
+            }
+          }
+        } catch (relatedError) {
+          console.error('❌ Error loading related products:', relatedError);
+          setRelatedProducts([]); // En caso de error, mostrar sección vacía
         }
+
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error al cargar el producto');
       } finally {
@@ -443,47 +483,39 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
           </div>
         </div>
 
-         {/* Related Products */}
-         {relatedProducts.length > 0 && (
-          <div>
-            <div className="p-6 lg:p-8">
-              <div className="flex justify-between items-center mb-8 w-full">
-                <h2 className="text-2xl md:text-3xl font-raven-bold text-black uppercase tracking-wide">
-                  PRODUCTOS RELACIONADOS
-                </h2>
-
-                <Link
-                  href="/store"
-                  className="group flex items-center gap-2 text-black hover:text-gray-700 transition-colors"
-                >
-                  <span className="font-urbanist font-semibold text-sm md:text-base text-[#373737]">
-                    Ver todos
-                  </span>
-                  <svg
-                    className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </Link>
-              </div>
-
-              <SimpleProductGrid cols={3} gap="small">
-                {relatedProducts.map((relatedProduct) => (
-                  <ProductCard
-                    key={relatedProduct.id}
-                    product={relatedProduct}
-                  />
-                ))}
-              </SimpleProductGrid>
+        {/* Sección de productos relacionados - MEJORADA */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-16">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Productos Relacionados
+              </h2>
+              <Link 
+                href="/store" 
+                className="text-[#EC1D25] hover:underline font-medium"
+              >
+                Ver todos →
+              </Link>
             </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {relatedProducts.map((relatedProduct) => (
+                <ProductCard key={relatedProduct.id} product={relatedProduct} />
+              ))}
+            </div>
+            
+            {/* Debug info - remover en producción */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm text-gray-600">
+                <strong>Debug:</strong> Mostrando {relatedProducts.length} productos relacionados
+                {product?.categories && (
+                  <span> | Categorías del producto actual: {product.categories.map(c => c.name).join(', ')}</span>
+                )}
+                {product?.brands && (
+                  <span> | Marcas: {product.brands.map((b: any) => b.name).join(', ')}</span>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

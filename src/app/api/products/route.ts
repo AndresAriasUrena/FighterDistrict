@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     const wcKey = process.env.NEXT_PUBLIC_WC_CONSUMER_KEY;
     const wcSecret = process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET;
 
+    
+
     if (!wpUrl || !wcKey || !wcSecret) {
       console.error('Missing WooCommerce configuration:', {
         hasWpUrl: !!wpUrl,
@@ -36,6 +38,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
 
     console.log(`API: Fetching products - page: ${page}, per_page: ${perPage}, orderby: ${orderby}`);
+    
 
     // Verificar cache solo para la primera página con configuración estándar
     const now = Date.now();

@@ -310,7 +310,7 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
           {/* Botón de filtros móvil */}
           <button
             onClick={onOpenFilters}
-            className="lg:hidden flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            className="lg:hidden flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 transition-colors"
           >
             <IoFilter className="w-4 h-4" />
             Filtros
