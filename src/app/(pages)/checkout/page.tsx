@@ -234,7 +234,7 @@ export default function CheckoutPage() {
             window.onvo.pay({
               onError: handlePaymentError,
               onSuccess: handlePaymentSuccess,
-              publicKey: process.env.NEXT_PUBLIC_ONVO_PUBLIC_KEY || 'onvo_test_publishable_key_VfvUFTY_UnbiAHUs-adMsbkJHSZPqL1cp9Sy5bJOd-itGA9WfL48YsjQpim9Hsq12zYg6y0ufdKsxLB0kNu9zw',
+              publicKey: process.env.NEXT_PUBLIC_ONVO_PUBLISHABLE_KEY || '',
               paymentIntentId: paymentIntentId,
               paymentType: "one_time"
             }).render('#onvo-payment-container');

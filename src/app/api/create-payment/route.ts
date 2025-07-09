@@ -49,8 +49,18 @@ export async function POST(request: NextRequest) {
       .join(', ');
 
     // Crear el payment intent en ONVO
+    const roundedAmount = Math.round(total);
+    
+    // Validación adicional del monto
+    if (roundedAmount < 100) {
+      return NextResponse.json(
+        { error: 'El monto mínimo debe ser 100 colones' },
+        { status: 400 }
+      );
+    }
+    
     const paymentIntentData = {
-      amount: Math.round(total), // Monto en colones
+      amount: roundedAmount, // Monto en colones
       currency: 'CRC',
       description: `Pedido Fighter District - ${itemsDescription}`,
       captureMethod: 'automatic' as const,
@@ -64,6 +74,13 @@ export async function POST(request: NextRequest) {
         currency: 'CRC'
       }
     };
+
+    console.log('Creating payment intent with data:', {
+      amount: roundedAmount,
+      currency: 'CRC',
+      description: paymentIntentData.description,
+      itemsCount: cartItems.length
+    });
 
     const paymentIntent = await createPaymentIntent(paymentIntentData);
 
@@ -85,19 +102,51 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error creating payment intent:', error);
     
+    // Log environment info para debugging
+    console.error('ONVO Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      ONVO_PUBLISHABLE_KEY_SET: !!process.env.NEXT_PUBLIC_ONVO_PUBLISHABLE_KEY,
+      ONVO_SECRET_KEY_SET: !!process.env.ONVO_SECRET_KEY,
+      ONVO_PUBLISHABLE_KEY_PREFIX: process.env.NEXT_PUBLIC_ONVO_PUBLISHABLE_KEY?.substring(0, 10) + '...',
+    });
+    
     if (error.response) {
-      console.error('ONVO API Error:', error.response.data);
+      console.error('ONVO API Error Status:', error.response.status);
+      console.error('ONVO API Error Data:', error.response.data);
+      console.error('ONVO API Error Config:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers ? Object.keys(error.config.headers) : 'none'
+      });
+      
       return NextResponse.json(
         { 
           error: 'Error al crear el payment intent en ONVO',
-          details: error.response.data 
+          details: {
+            status: error.response.status,
+            message: error.response.data?.message || 'Unknown ONVO error',
+            code: error.response.data?.error || 'unknown_error'
+          }
         },
         { status: 500 }
       );
     }
 
+    // Para otros tipos de error
+    console.error('General Payment Error Details:', {
+      message: error.message,
+      code: error.code,
+      name: error.name
+    });
+
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { 
+        error: 'Error interno del servidor',
+        details: {
+          message: error.message,
+          type: error.constructor.name
+        }
+      },
       { status: 500 }
     );
   }
