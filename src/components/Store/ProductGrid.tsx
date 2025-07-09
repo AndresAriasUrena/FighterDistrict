@@ -8,8 +8,16 @@ import { SearchContext } from '@/lib/SearchContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Product } from '@/types/product';
 
+interface FilterData {
+  categories: string[];
+  brands: string[];
+  sizes: string[];
+  sports: string[];
+  priceRange: [number, number];
+}
+
 interface ProductGridProps {
-  filters: any;
+  filters: FilterData | null;
   onOpenFilters: () => void;
 }
 
@@ -25,9 +33,9 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Configuración de paginación ajustable
-  const PRODUCTS_PER_PAGE = 24; // Aumentado de 12 a 24
-  const INITIAL_LOAD = 48; // Cargar más productos inicialmente
+  // Configuración de paginación
+  const PRODUCTS_PER_PAGE = 24;
+  const INITIAL_LOAD = 48;
 
   // Función para obtener productos
   const fetchProducts = async (pageNum: number = 1, append: boolean = false) => {
@@ -35,7 +43,6 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
       setLoading(true);
       setError(null);
 
-      // Usar más productos en la primera carga
       const perPage = pageNum === 1 ? INITIAL_LOAD : PRODUCTS_PER_PAGE;
 
       const params = new URLSearchParams({
@@ -65,7 +72,6 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
       // Actualizar productos
       if (append) {
         setProducts(prev => {
-          // Evitar duplicados
           const existingIds = new Set(prev.map(p => p.id));
           const newProducts = data.filter(p => !existingIds.has(p.id));
           return [...prev, ...newProducts];
@@ -74,60 +80,15 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
         setProducts(data);
       }
 
-      // Obtener información de paginación de los headers
+      // Obtener información de paginación
       const totalPages = parseInt(response.headers.get('X-Total-Pages') || '1');
       const totalCount = parseInt(response.headers.get('X-Total') || data.length.toString());
       
       setTotalProducts(totalCount);
       setHasMore(pageNum < totalPages && data.length === perPage);
 
-      console.log(`Total products available: ${totalCount}, Has more: ${pageNum < totalPages}`);
-
     } catch (err) {
       console.error('Error fetching products:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido al cargar productos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Función para cargar todos los productos
-  const loadAllProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const params = new URLSearchParams({
-        per_page: '100', // Máximo permitido por WooCommerce
-        page: '1',
-        orderby: sortBy.split('-')[0],
-        order: sortBy.includes('asc') ? 'asc' : 'desc'
-      });
-
-      console.log('Loading all products...');
-
-      const response = await fetch(`/api/products?${params}`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || errorData.error || 'Error al cargar productos');
-      }
-
-      const data = await response.json();
-      
-      if (!Array.isArray(data)) {
-        throw new Error('Formato de respuesta inválido');
-      }
-
-      console.log(`Loaded all ${data.length} products`);
-
-      setProducts(data);
-      setTotalProducts(data.length);
-      setHasMore(false);
-      setPage(1);
-
-    } catch (err) {
-      console.error('Error loading all products:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido al cargar productos');
     } finally {
       setLoading(false);
@@ -139,43 +100,140 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
     fetchProducts(1, false);
   }, [sortBy]);
 
+  // Función para filtrar productos - MEJORADA PARA TODOS LOS FILTROS
+  const filteredProducts = products.filter(product => {
+    // 1. FILTRO POR BÚSQUEDA
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        product.name.toLowerCase().includes(searchLower) ||
+        product.short_description?.toLowerCase().includes(searchLower) ||
+        product.categories?.some(cat => cat.name.toLowerCase().includes(searchLower)) ||
+        (product as any).tags?.some((tag: any) => tag.name.toLowerCase().includes(searchLower));
+      
+      if (!matchesSearch) return false;
+    }
+
+    // 2. FILTROS AVANZADOS
+    if (filters) {
+      console.log(`Filtering product: ${product.name}`, {
+        filters,
+        productBrands: (product as any).brands,
+        productCategories: product.categories,
+        productPrice: product.price
+      });
+
+      // FILTRO POR CATEGORÍAS
+      if (filters.categories?.length > 0) {
+        const hasCategory = product.categories?.some(cat => 
+          filters.categories.includes(cat.slug) || 
+          filters.categories.includes(cat.name)
+        );
+        if (!hasCategory) {
+          console.log(`❌ Category filter failed for ${product.name}`);
+          return false;
+        }
+      }
+
+      // FILTRO POR MARCAS
+      if (filters.brands?.length > 0) {
+        const productBrands = (product as any).brands;
+        
+        if (!productBrands || productBrands.length === 0) {
+          console.log(`❌ No brands found for product: ${product.name}`);
+          return false;
+        }
+
+        const brandMatches = productBrands.some((brand: any) =>
+          filters.brands.some(filterBrand => 
+            brand.name.toLowerCase() === filterBrand.toLowerCase() ||
+            brand.slug.toLowerCase() === filterBrand.toLowerCase()
+          )
+        );
+
+        if (!brandMatches) {
+          console.log(`❌ Brand filter failed for ${product.name}. Product brands:`, productBrands.map((b: any) => b.name));
+          return false;
+        } else {
+          console.log(`✅ Brand match for ${product.name}`);
+        }
+      }
+
+      // FILTRO POR TALLAS
+      if (filters.sizes?.length > 0) {
+        const productAttributes = (product as any).attributes || [];
+        
+        const hasSizes = productAttributes.some((attr: any) => {
+          if (attr.name.toLowerCase() === 'talla' || attr.name.toLowerCase() === 'size') {
+            return attr.options?.some((size: string) => 
+              filters.sizes.includes(size)
+            );
+          }
+          return false;
+        });
+
+        if (!hasSizes) {
+          console.log(`❌ Size filter failed for ${product.name}`);
+          return false;
+        }
+      }
+
+      // FILTRO POR DEPORTES (usando tags)
+      if (filters.sports?.length > 0) {
+        const productTags = (product as any).tags || [];
+        
+        const hasSports = productTags.some((tag: any) => 
+          filters.sports.includes(tag.name) || filters.sports.includes(tag.slug)
+        );
+
+        if (!hasSports) {
+          console.log(`❌ Sport filter failed for ${product.name}`);
+          return false;
+        }
+      }
+
+      // FILTRO POR PRECIO
+      if (filters.priceRange && filters.priceRange[0] > 0) {
+        const productPrice = parseFloat(product.price) || parseFloat(product.regular_price || '0') || 0;
+        
+        if (productPrice < filters.priceRange[0] || productPrice > filters.priceRange[1]) {
+          console.log(`❌ Price filter failed for ${product.name}. Price: ${productPrice}, Range: ${filters.priceRange}`);
+          return false;
+        }
+      }
+    }
+
+    return true;
+  });
+
+  // Debug de filtros aplicados
+  useEffect(() => {
+    if (filters) {
+      console.log('🔍 FILTER DEBUG:', {
+        totalProducts: products.length,
+        filteredProducts: filteredProducts.length,
+        activeFilters: {
+          categories: filters.categories?.length || 0,
+          brands: filters.brands?.length || 0,
+          sizes: filters.sizes?.length || 0,
+          sports: filters.sports?.length || 0,
+          priceRange: filters.priceRange
+        },
+        searchTerm
+      });
+    }
+  }, [filters, filteredProducts.length, products.length, searchTerm]);
+
   // Función para reintentar
   const handleRetry = () => {
     setError(null);
     fetchProducts(page, false);
   };
 
-  // Filtrar productos localmente
-  const filteredProducts = products.filter(product => {
-    // Filtro por búsqueda
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = 
-        product.name.toLowerCase().includes(searchLower) ||
-        product.categories?.some(cat => cat.name.toLowerCase().includes(searchLower));
-      
-      if (!matchesSearch) return false;
-    }
-
-    // Filtros adicionales si existen
-    if (filters) {
-      // Por categorías
-      if (filters.categories?.length > 0) {
-        const hasCategory = product.categories?.some(cat => 
-          filters.categories.includes(cat.slug) || filters.categories.includes(cat.name)
-        );
-        if (!hasCategory) return false;
-      }
-
-      // Por precio
-      if (filters.priceRange) {
-        const price = parseFloat(product.price);
-        if (price < filters.priceRange[0] || price > filters.priceRange[1]) return false;
-      }
-    }
-
-    return true;
-  });
+  // Función para limpiar filtros
+  const clearFilters = () => {
+    router.push('/store');
+  };
 
   // Renderizar estado de error
   if (error) {
@@ -212,6 +270,40 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
             {filteredProducts.length} de {totalProducts} productos encontrados
             {searchTerm && ` para "${searchTerm}"`}
           </p>
+          
+          {/* Mostrar filtros activos */}
+          {filters && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {filters.brands?.map(brand => (
+                <span key={brand} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  Marca: {brand}
+                </span>
+              ))}
+              {filters.categories?.map(category => (
+                <span key={category} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                  Categoría: {category}
+                </span>
+              ))}
+              {filters.sizes?.map(size => (
+                <span key={size} className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                  Talla: {size}
+                </span>
+              ))}
+              {filters.sports?.map(sport => (
+                <span key={sport} className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                  Deporte: {sport}
+                </span>
+              ))}
+              {(filters.brands?.length > 0 || filters.categories?.length > 0 || filters.sizes?.length > 0 || filters.sports?.length > 0) && (
+                <button
+                  onClick={clearFilters}
+                  className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full hover:bg-red-200 transition-colors"
+                >
+                  ✕ Limpiar filtros
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-4 flex-wrap">
@@ -223,16 +315,6 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
             <IoFilter className="w-4 h-4" />
             Filtros
           </button>
-
-          {/* Botón para cargar todos */}
-          {hasMore && !loading && (
-            <button
-              onClick={loadAllProducts}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
-            >
-              Ver todos ({totalProducts})
-            </button>
-          )}
 
           {/* Selector de ordenamiento */}
           <select
@@ -286,28 +368,18 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
                   </button>
                 </div>
               )}
-
-              {/* Mensaje cuando se han cargado todos */}
-              {!hasMore && products.length > INITIAL_LOAD && (
-                <div className="text-center mt-8 py-4 text-gray-500">
-                  ✓ Todos los productos han sido cargados ({filteredProducts.length} total)
-                </div>
-              )}
             </>
           ) : (
             <div className="text-center py-12">
               <p className="text-gray-500 text-lg">
-                No se encontraron productos
-                {searchTerm && ` para "${searchTerm}"`}
+                No se encontraron productos con los filtros seleccionados
               </p>
-              {searchTerm && (
-                <button
-                  onClick={() => window.location.reload()}
-                  className="mt-4 text-[#EC1D25] hover:underline"
-                >
-                  Limpiar búsqueda
-                </button>
-              )}
+              <button
+                onClick={clearFilters}
+                className="mt-4 text-[#EC1D25] hover:underline"
+              >
+                Limpiar filtros y ver todos los productos
+              </button>
             </div>
           )}
         </>

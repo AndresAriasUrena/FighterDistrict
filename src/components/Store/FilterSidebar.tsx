@@ -105,69 +105,127 @@ const FilterSidebar = ({ onFilterChange, isMobileOpen = false, setIsMobileOpen =
   useEffect(() => {
     const fetchFilters = async () => {
       try {
-        // Obtener todos los productos desde nuestra API route
+        setLoading(true);
+        console.log('🔄 Fetching products for filters...');
+        
+        // Obtener todos los productos
         const response = await fetch('/api/products?per_page=100');
         const products: WooCommerceProduct[] = await response.json();
-
-        // Crear filtros dinámicos basados en la estructura real
+  
+        console.log('📦 Sample product structure:', products[0]);
+  
+        // Maps para contar ocurrencias
         const categoryMap = new Map<string, number>();
         const brandMap = new Map<string, number>();
         const sizeMap = new Map<string, number>();
         const sportMap = new Map<string, number>();
-
+  
         products.forEach(product => {
-          // Extraer categorías
+          // 1. EXTRAER CATEGORÍAS
           product.categories?.forEach(cat => {
             categoryMap.set(cat.name, (categoryMap.get(cat.name) || 0) + 1);
           });
-
-          // Extraer tallas de atributos
+  
+          // 2. EXTRAER MARCAS (campo brands directo)
+          product.brands?.forEach(brand => {
+            brandMap.set(brand.name, (brandMap.get(brand.name) || 0) + 1);
+          });
+  
+          // 3. EXTRAER TALLAS (atributos)
           product.attributes?.forEach(attr => {
-            if (attr.name === 'Talla') {
+            if (attr.name.toLowerCase() === 'talla' || attr.name.toLowerCase() === 'size') {
               attr.options?.forEach(size => {
                 sizeMap.set(size, (sizeMap.get(size) || 0) + 1);
               });
             }
           });
-
-          // Extraer marcas del campo brands correcto
-          product.brands?.forEach(brand => {
-            brandMap.set(brand.name, (brandMap.get(brand.name) || 0) + 1);
-          });
-
-          // Clasificar tags solo para deportes
+  
+          // 4. EXTRAER DEPORTES (tags relevantes)
           product.tags?.forEach(tag => {
             const tagName = tag.name;
             const tagLower = tagName.toLowerCase();
-
-            // Detectar deportes por keywords comunes
-            const sportKeywords = ['bjj', 'judo', 'grappling', 'boxing', 'mma', 'wrestling', 'muay thai', 'kickboxing', 'jiu jitsu'];
-            const isSport = sportKeywords.some(sport => tagLower.includes(sport));
-
+  
+            // Keywords para identificar deportes
+            const sportKeywords = [
+              'bjj', 'jiu jitsu', 'jiu-jitsu', 'judo', 'grappling', 
+              'boxing', 'boxeo', 'mma', 'wrestling', 'lucha',
+              'muay thai', 'kickboxing', 'entrenamiento', 'competencia',
+              'crossfit', 'fitness', 'gym'
+            ];
+            
+            const isSport = sportKeywords.some(sport => 
+              tagLower.includes(sport) || sport.includes(tagLower)
+            );
+  
             if (isSport) {
               sportMap.set(tagName, (sportMap.get(tagName) || 0) + 1);
             }
           });
         });
-
-        // Calcular rango de precios (usar regular_price si price está vacío)
+  
+        // Calcular rango de precios real
         const prices = products.map(p => {
-          const price = parseFloat(p.price) || parseFloat(p.regular_price) || 0;
+          // Intentar obtener precio de diferentes campos
+          let price = 0;
+          
+          if (p.price && p.price !== '') {
+            price = parseFloat(p.price);
+          } else if (p.regular_price && p.regular_price !== '') {
+            price = parseFloat(p.regular_price);
+          }
+          
           return price;
         }).filter(p => p > 0);
-
+  
         const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-        const maxPrice = prices.length > 0 ? Math.max(...prices) : 200;
-
+        const maxPrice = prices.length > 0 ? Math.max(...prices) : 100000; // 100k colones max
+  
+        // Debug de filtros encontrados
+        console.log('🏷️ Filters extracted:', {
+          categories: Array.from(categoryMap.entries()),
+          brands: Array.from(brandMap.entries()),
+          sizes: Array.from(sizeMap.entries()),
+          sports: Array.from(sportMap.entries()),
+          priceRange: [minPrice, maxPrice]
+        });
+  
+        // Actualizar filtros disponibles
         setAvailableFilters({
-          categories: Array.from(categoryMap.entries()).map(([name, count]) => ({ label: name, count })),
-          brands: Array.from(brandMap.entries()).map(([name, count]) => ({ label: name, count })),
-          sizes: Array.from(sizeMap.entries()).map(([name, count]) => ({ label: name, count })),
-          sports: Array.from(sportMap.entries()).map(([name, count]) => ({ label: name, count })),
+          categories: Array.from(categoryMap.entries())
+            .map(([name, count]) => ({ label: name, count }))
+            .sort((a, b) => b.count - a.count), // Ordenar por popularidad
+          
+          brands: Array.from(brandMap.entries())
+            .map(([name, count]) => ({ label: name, count }))
+            .sort((a, b) => a.label.localeCompare(b.label)), // Ordenar alfabéticamente
+          
+          sizes: Array.from(sizeMap.entries())
+            .map(([name, count]) => ({ label: name, count }))
+            .sort((a, b) => {
+              // Ordenamiento especial para tallas
+              const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', '2XL', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5'];
+              const aIndex = sizeOrder.indexOf(a.label);
+              const bIndex = sizeOrder.indexOf(b.label);
+              
+              if (aIndex !== -1 && bIndex !== -1) {
+                return aIndex - bIndex;
+              } else if (aIndex !== -1) {
+                return -1;
+              } else if (bIndex !== -1) {
+                return 1;
+              } else {
+                return a.label.localeCompare(b.label);
+              }
+            }),
+          
+          sports: Array.from(sportMap.entries())
+            .map(([name, count]) => ({ label: name, count }))
+            .sort((a, b) => b.count - a.count), // Ordenar por popularidad
+          
           priceRange: [Math.floor(minPrice), Math.ceil(maxPrice)]
         });
-
-        // Cargar filtros desde la URL después de tener los datos
+  
+        // Cargar filtros desde la URL
         const urlFilters = loadFiltersFromURL();
         setSelectedFilters({
           ...urlFilters,
@@ -176,23 +234,23 @@ const FilterSidebar = ({ onFilterChange, isMobileOpen = false, setIsMobileOpen =
             Math.ceil(maxPrice)
           ]
         });
-
+  
         setLoading(false);
-
+  
       } catch (error) {
-        console.error('Error fetching products for filters:', error);
+        console.error('❌ Error fetching products for filters:', error);
         setLoading(false);
       }
     };
-
+  
     fetchFilters();
   }, []);
 
   // useEffect para actualizar la URL cuando cambien los filtros
   useEffect(() => {
-    // Solo actualizar URL si no estamos cargando (evitar actualizar durante la inicialización)
     if (!loading) {
-      updateURL(selectedFilters);
+      console.log('🔄 Notifying filter changes:', selectedFilters);
+      onFilterChange?.(selectedFilters);
     }
   }, [selectedFilters, loading]);
 
