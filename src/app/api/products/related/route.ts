@@ -1,13 +1,17 @@
-// src/app/api/products/[id]/related/route.ts
+// src/app/api/products/related/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-interface RouteParams {
-  params: Promise<{ id: string }>;
-}
-
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest) {
   try {
-    const { id: productId } = await params;
+    const { searchParams } = new URL(request.url);
+    const productId = searchParams.get('id');
+    
+    if (!productId) {
+      return NextResponse.json(
+        { error: 'Product ID is required' },
+        { status: 400 }
+      );
+    }
     
     console.log(`🔗 Finding related products for product ID: ${productId}`);
 
@@ -23,7 +27,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Paso 1: Obtener el producto actual para extraer información relevante
+    // Paso 1: Obtener el producto actual
     const productUrl = `${wpUrl}/wp-json/wc/v3/products/${productId}?consumer_key=${wcKey}&consumer_secret=${wcSecret}`;
     
     const productResponse = await fetch(productUrl, {
@@ -43,12 +47,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     
     let relatedProducts: any[] = [];
 
-    // Paso 2: Intentar usar los related_ids de WooCommerce
+    // Paso 2: Usar related_ids de WooCommerce
     if (currentProduct.related_ids && currentProduct.related_ids.length > 0) {
       console.log(`🎯 Using WooCommerce related_ids: ${currentProduct.related_ids}`);
       
       try {
-        const relatedIds = currentProduct.related_ids.slice(0, 6); // Máximo 6 para tener buffer
+        const relatedIds = currentProduct.related_ids.slice(0, 6);
         const includeParam = relatedIds.join(',');
         
         const relatedUrl = `${wpUrl}/wp-json/wc/v3/products?consumer_key=${wcKey}&consumer_secret=${wcSecret}&include=${includeParam}&status=publish&per_page=6`;
@@ -68,7 +72,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Paso 3: Si no hay suficientes, buscar por categoría
+    // Paso 3: Buscar por categoría si no hay suficientes
     if (relatedProducts.length < 3 && currentProduct.categories && currentProduct.categories.length > 0) {
       console.log(`📂 Searching by categories: ${currentProduct.categories.map((c: any) => c.name).join(', ')}`);
       
@@ -86,7 +90,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         if (categoryResponse.ok) {
           const categoryProducts = await categoryResponse.json();
           
-          // Evitar duplicados
           const existingIds = new Set(relatedProducts.map(p => p.id));
           const newCategoryProducts = categoryProducts.filter((p: any) => !existingIds.has(p.id));
           
@@ -98,13 +101,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Paso 4: Si no hay suficientes, buscar por marca
+    // Paso 4: Buscar por marca si no hay suficientes
     if (relatedProducts.length < 3 && currentProduct.brands && currentProduct.brands.length > 0) {
       console.log(`🏷️ Searching by brands: ${currentProduct.brands.map((b: any) => b.name).join(', ')}`);
       
       try {
-        // Obtener todos los productos y filtrar por marca localmente
-        // (WooCommerce no siempre tiene endpoint directo para marcas)
         const allProductsUrl = `${wpUrl}/wp-json/wc/v3/products?consumer_key=${wcKey}&consumer_secret=${wcSecret}&exclude=${productId}&status=publish&per_page=20&orderby=popularity`;
         
         const allProductsResponse = await fetch(allProductsUrl, {
@@ -124,7 +125,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             );
           });
           
-          // Evitar duplicados
           const existingIds = new Set(relatedProducts.map(p => p.id));
           const newBrandProducts = sameBrandProducts.filter((p: any) => !existingIds.has(p.id));
           
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Paso 5: Si aún no hay suficientes, usar productos populares/recientes como fallback
+    // Paso 5: Fallback a productos populares
     if (relatedProducts.length < 3) {
       console.log(`🔄 Using fallback: recent popular products`);
       
@@ -151,7 +151,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         if (fallbackResponse.ok) {
           const fallbackProducts = await fallbackResponse.json();
           
-          // Evitar duplicados
           const existingIds = new Set(relatedProducts.map(p => p.id));
           const newFallbackProducts = fallbackProducts.filter((p: any) => !existingIds.has(p.id));
           
@@ -163,7 +162,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Paso 6: Limitar a 3 productos y ordenar por relevancia
+    // Paso 6: Formatear y limitar resultados
     const finalRelatedProducts = relatedProducts
       .slice(0, 3)
       .map(product => ({
@@ -184,15 +183,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       finalRelatedProducts.map(p => p.name)
     );
 
-    // Headers de respuesta
-    const responseHeaders = {
-      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-      'X-Related-Count': finalRelatedProducts.length.toString(),
-      'X-Current-Product': currentProduct.name
-    };
-
     return NextResponse.json(finalRelatedProducts, {
-      headers: responseHeaders
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'X-Related-Count': finalRelatedProducts.length.toString(),
+        'X-Current-Product': currentProduct.name
+      }
     });
 
   } catch (error: any) {

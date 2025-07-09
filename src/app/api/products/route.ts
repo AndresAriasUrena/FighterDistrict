@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
     const wcKey = process.env.NEXT_PUBLIC_WC_CONSUMER_KEY;
     const wcSecret = process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET;
 
-    
-
     if (!wpUrl || !wcKey || !wcSecret) {
       console.error('Missing WooCommerce configuration:', {
         hasWpUrl: !!wpUrl,
@@ -30,19 +28,27 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Obtener parámetros de la URL
+    // Obtener parámetros de la URL (AMPLIADO PARA PRODUCTOS RELACIONADOS)
     const { searchParams } = new URL(request.url);
-    const perPage = Math.min(parseInt(searchParams.get('per_page') || '24'), 100); // Máximo 100
+    const perPage = Math.min(parseInt(searchParams.get('per_page') || '24'), 100);
     const orderby = searchParams.get('orderby') || 'date';
     const order = searchParams.get('order') || 'desc';
     const page = parseInt(searchParams.get('page') || '1');
 
-    console.log(`API: Fetching products - page: ${page}, per_page: ${perPage}, orderby: ${orderby}`);
-    
+    // NUEVOS PARÁMETROS PARA PRODUCTOS RELACIONADOS
+    const exclude = searchParams.get('exclude');
+    const category = searchParams.get('category');
+    const include = searchParams.get('include');
+
+    console.log(`API: Fetching products - page: ${page}, per_page: ${perPage}, orderby: ${orderby}`, {
+      exclude,
+      category,
+      include
+    });
 
     // Verificar cache solo para la primera página con configuración estándar
     const now = Date.now();
-    const isStandardRequest = page === 1 && perPage === 24 && orderby === 'date' && order === 'desc';
+    const isStandardRequest = page === 1 && perPage === 24 && orderby === 'date' && order === 'desc' && !exclude && !category && !include;
     
     if (isStandardRequest && cachedProducts && (now - cacheTimestamp) < CACHE_DURATION) {
       console.log('Returning cached products');
@@ -56,7 +62,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Construir URL de WooCommerce
+    // Construir URL de WooCommerce con parámetros adicionales
     const apiUrl = `${wpUrl}/wp-json/wc/v3/products`;
     const params = new URLSearchParams({
       consumer_key: wcKey,
@@ -67,6 +73,22 @@ export async function GET(request: NextRequest) {
       page: page.toString(),
       status: 'publish'
     });
+
+    // Agregar parámetros opcionales para productos relacionados
+    if (exclude) {
+      params.append('exclude', exclude);
+      console.log(`Excluding products: ${exclude}`);
+    }
+
+    if (category) {
+      params.append('category', category);
+      console.log(`Filtering by category: ${category}`);
+    }
+
+    if (include) {
+      params.append('include', include);
+      console.log(`Including only products: ${include}`);
+    }
 
     const fullUrl = `${apiUrl}?${params.toString()}`;
     console.log('Fetching products from:', fullUrl.replace(wcSecret, '***'));

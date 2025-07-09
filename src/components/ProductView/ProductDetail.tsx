@@ -72,12 +72,12 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
         
         setProduct(wooProduct);
 
-        /// 🔥 NUEVA LÓGICA DE PRODUCTOS RELACIONADOS
+      // 🔥 NUEVA LÓGICA DE PRODUCTOS RELACIONADOS (CORREGIDA)
       console.log(`🔗 Fetching related products for: ${wooProduct.name} (ID: ${wooProduct.id})`);
-      
+
       try {
-        // Usar la nueva API de productos relacionados
-        const relatedResponse = await fetch(`/api/products/${wooProduct.id}/related`);
+        // Usar la nueva API de productos relacionados con query parameter
+        const relatedResponse = await fetch(`/api/products/related?id=${wooProduct.id}`);
         
         if (relatedResponse.ok) {
           const relatedData = await relatedResponse.json();
@@ -91,13 +91,15 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
           const categoryIds = wooProduct.categories?.map(cat => cat.id) || [];
           
           if (categoryIds.length > 0) {
+            // Actualizar para usar parámetros de query en lugar de path
             const fallbackResponse = await fetch(
-              `/api/products?per_page=4&exclude=${wooProduct.id}&category=${categoryIds[0]}`
+              `/api/products?per_page=4&orderby=popularity&category=${categoryIds[0]}`
             );
             
             if (fallbackResponse.ok) {
               const fallbackProducts: WooCommerceProduct[] = await fallbackResponse.json();
               const transformedFallback = fallbackProducts
+                .filter(p => p.id !== wooProduct.id) // Filtrar el producto actual
                 .slice(0, 3)
                 .map(transformWooCommerceProduct);
               setRelatedProducts(transformedFallback);
@@ -114,14 +116,13 @@ export default function ProductDetail({ slug }: ProductDetailProps) {
                 .map(transformWooCommerceProduct);
               setRelatedProducts(transformedLastResort);
               console.log(`🆘 Last resort related products:`, transformedLastResort.map(p => p.name));
-              }
             }
           }
-        } catch (relatedError) {
-          console.error('❌ Error loading related products:', relatedError);
-          setRelatedProducts([]); // En caso de error, mostrar sección vacía
         }
-
+      } catch (relatedError) {
+        console.error('❌ Error loading related products:', relatedError);
+        setRelatedProducts([]); // En caso de error, mostrar sección vacía
+      }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error al cargar el producto');
       } finally {
