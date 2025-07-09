@@ -226,7 +226,6 @@ export default function CheckoutPage() {
             // Verificar que tenemos la publicKey
             const publicKey = process.env.NEXT_PUBLIC_ONVO_PUBLISHABLE_KEY;
             if (!publicKey) {
-              console.error('❌ ONVO_PUBLISHABLE_KEY no está configurada');
               setError('Error de configuración: clave pública de ONVO no disponible');
               return;
             }
@@ -237,7 +236,7 @@ export default function CheckoutPage() {
               container.innerHTML = '';
             }
             
-            console.log('🔑 Iniciando ONVO con publicKey:', publicKey.substring(0, 20) + '...');
+
             
             // Renderizar el componente de pago
             window.onvo.pay({

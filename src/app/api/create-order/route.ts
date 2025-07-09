@@ -128,52 +128,20 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error creating order:', error);
     
-    // Log environment info (sin datos sensibles)
-    console.error('Environment check:', {
-      NODE_ENV: process.env.NODE_ENV,
-      WC_URL_SET: !!process.env.NEXT_PUBLIC_WC_URL,
-      WC_CONSUMER_KEY_SET: !!process.env.NEXT_PUBLIC_WC_CONSUMER_KEY,
-      WC_CONSUMER_SECRET_SET: !!process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET,
-    });
-    
     // Log more details about the error
     if (error.response) {
-      console.error('WooCommerce API Error Status:', error.response.status);
-      console.error('WooCommerce API Error Data:', error.response.data);
-      console.error('WooCommerce API Error Config:', {
-        url: error.config?.url,
-        method: error.config?.method,
-      });
-      
+      console.error('WooCommerce API Error:', error.response.data);
       return NextResponse.json(
         { 
           error: 'Error al crear la orden en WooCommerce',
-          details: {
-            status: error.response.status,
-            statusText: error.response.statusText,
-            message: error.response.data?.message || 'Unknown WooCommerce error',
-            code: error.response.data?.code || 'unknown_error'
-          }
+          details: error.response.data 
         },
         { status: 500 }
       );
     }
 
-    // Para otros tipos de error
-    console.error('General Error Details:', {
-      message: error.message,
-      code: error.code,
-      name: error.name
-    });
-
     return NextResponse.json(
-      { 
-        error: 'Error interno del servidor',
-        details: {
-          message: error.message,
-          type: error.constructor.name
-        }
-      },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
   }
