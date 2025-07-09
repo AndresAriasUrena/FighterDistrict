@@ -320,7 +320,7 @@ export default function ProductGrid({ filters, onOpenFilters }: ProductGridProps
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#EC1D25]"
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[#EC1D25]"
           >
             <option value="date">Más recientes</option>
             <option value="price-asc">Precio: Menor a mayor</option>
