@@ -5,6 +5,7 @@ import { SearchProvider } from "@/lib/SearchContext";
 import { CartProvider } from "@/lib/CartContext";
 import CartSidebar from "@/components/CartSidebar";
 import CartSyncIndicator from "@/components/CartSyncIndicator";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -123,6 +124,20 @@ export default function RootLayout({
         
         {/* ONVO Pay SDK */}
         <script src="https://sdk.onvopay.com/sdk.js" defer></script>
+
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-WZNE20XH10"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-WZNE20XH10');
+          `}
+        </Script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-urbanist`}
